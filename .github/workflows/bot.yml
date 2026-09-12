@@ -101,9 +101,36 @@ jobs:
             cat cloudflared.log
             exit 1
           fi
+          export PUBLIC_URL
 
           curl --fail --retry 10 --retry-delay 2 "$PUBLIC_URL/health"
           python -m mogaem.configure_webapp "$PUBLIC_URL"
+          python - <<'PY'
+          import asyncio
+          import os
+
+          from aiogram import Bot
+          from aiogram.types import MenuButtonWebApp
+
+          async def main() -> None:
+              bot = Bot(os.environ["BOT_TOKEN"])
+              try:
+                  button = await bot.get_chat_menu_button()
+                  expected_url = os.environ["PUBLIC_URL"].rstrip("/")
+                  actual_url = button.web_app.url.rstrip("/") if isinstance(button, MenuButtonWebApp) else None
+                  if not isinstance(button, MenuButtonWebApp):
+                      raise SystemExit(f"Telegram menu button has unexpected type: {type(button).__name__}")
+                  if button.text != "⚔️ Mogaem" or actual_url != expected_url:
+                      raise SystemExit(
+                          f"Telegram menu button mismatch: text={button.text!r}, url={actual_url!r}, expected={expected_url!r}"
+                      )
+                  print(f"Verified Telegram menu button: {button.text} -> {actual_url}")
+              finally:
+                  await bot.session.close()
+
+          asyncio.run(main())
+          PY
+
           printf '%s\n' "$PUBLIC_URL" > miniapp-url.txt
           echo "public_url=$PUBLIC_URL" >> "$GITHUB_OUTPUT"
           {
@@ -119,7 +146,12 @@ jobs:
             cat bot.log
             exit 1
           fi
-          grep -E 'Start polling|Run polling for bot' bot.log || true
+          if ! grep -Eq 'Start polling|Run polling for bot' bot.log; then
+            echo "Bot process is alive but polling start was not confirmed"
+            cat bot.log
+            exit 1
+          fi
+          grep -E 'Start polling|Run polling for bot' bot.log
 
       - name: Publish current Mini App URL
         uses: actions/upload-artifact@v4
