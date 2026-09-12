@@ -1,4 +1,4 @@
-name: Run Mogaem bot
+name: Run Mogaem test runtime
 
 on:
   workflow_dispatch:
@@ -6,24 +6,29 @@ on:
     branches: [main]
     paths:
       - "mogaem/**"
+      - "webapp/**"
       - "pyproject.toml"
       - ".github/workflows/bot.yml"
   schedule:
-    - cron: "7 */5 * * *"
+    - cron: "7 * * * *"
 
 concurrency:
   group: mogaem-bot
   cancel-in-progress: true
 
 jobs:
-  bot:
+  runtime:
     runs-on: ubuntu-latest
-    timeout-minutes: 300
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Restore temporary SQLite database
         uses: actions/cache@v4
         with:
@@ -31,25 +36,94 @@ jobs:
           key: mogaem-db-${{ github.run_id }}
           restore-keys: |
             mogaem-db-
-      - name: Install
+
+      - name: Install backend
         run: pip install .
+
+      - name: Build Mini App
+        working-directory: webapp
+        run: |
+          npm install
+          npm run build
+
       - name: Validate bot token
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: test -n "$BOT_TOKEN" || (echo "BOT_TOKEN secret is missing" && exit 1)
-      - name: Run bot
+
+      - name: Install cloudflared
+        run: |
+          curl -L --fail --retry 3 -o cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+          chmod +x cloudflared
+          ./cloudflared --version
+
+      - name: Run Mini App and bot
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           DATABASE_URL_SECRET: ${{ secrets.DATABASE_URL }}
           PYTHONUNBUFFERED: "1"
         run: |
+          set -euo pipefail
           if [ -n "$DATABASE_URL_SECRET" ]; then
             export DATABASE_URL="$DATABASE_URL_SECRET"
           fi
+
+          API_PID=""
+          TUNNEL_PID=""
+          cleanup() {
+            if [ -n "$TUNNEL_PID" ]; then kill "$TUNNEL_PID" 2>/dev/null || true; fi
+            if [ -n "$API_PID" ]; then kill "$API_PID" 2>/dev/null || true; fi
+          }
+          trap cleanup EXIT
+
+          python -m uvicorn mogaem.api:app --host 127.0.0.1 --port 8000 >uvicorn.log 2>&1 &
+          API_PID=$!
+
+          for i in $(seq 1 40); do
+            if curl --silent --fail http://127.0.0.1:8000/health >/dev/null; then
+              break
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              cat uvicorn.log
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:8000/health
+
+          ./cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate >cloudflared.log 2>&1 &
+          TUNNEL_PID=$!
+
+          PUBLIC_URL=""
+          for i in $(seq 1 60); do
+            PUBLIC_URL=$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)
+            if [ -n "$PUBLIC_URL" ]; then break; fi
+            if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+              cat cloudflared.log
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ -z "$PUBLIC_URL" ]; then
+            cat cloudflared.log
+            exit 1
+          fi
+
+          echo "Mini App URL: $PUBLIC_URL"
+          curl --fail --retry 10 --retry-delay 2 "$PUBLIC_URL/health"
+          python -m mogaem.configure_webapp "$PUBLIC_URL"
+          {
+            echo "### Mogaem Mini App"
+            echo ""
+            echo "$PUBLIC_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
+
           set +e
-          timeout --signal=INT 294m python -m mogaem.bot
+          timeout --signal=INT 52m python -m mogaem.bot
           code=$?
-          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
+          set -e
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ] && [ "$code" -ne 130 ]; then
+            echo "Bot exited with code $code"
+            cat uvicorn.log
             exit "$code"
           fi
-          exit 0
