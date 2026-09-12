@@ -45,9 +45,9 @@ async def test_profile_view_aggregates_received_mog_ratings():
         rater_c = await service.ensure_user(2004, "c")
 
         await service.save_profile(target.id, name="Никита", age=18, gender="male", search_gender="female", city=None, bio="", photos=["target-photo"])
-        await service.save_profile(rater_a.id, name="A", age=19, gender="female", search_gender="any", city=None, bio="", photos=["a-photo"])
-        await service.save_profile(rater_b.id, name="B", age=20, gender="female", search_gender="any", city=None, bio="", photos=["b-photo"])
-        await service.save_profile(rater_c.id, name="C", age=21, gender="male", search_gender="any", city=None, bio="", photos=["c-photo"])
+        await service.save_profile(rater_a.id, name="Анна", age=19, gender="female", search_gender="any", city=None, bio="", photos=["a-photo"])
+        await service.save_profile(rater_b.id, name="Бета", age=20, gender="female", search_gender="any", city=None, bio="", photos=["b-photo"])
+        await service.save_profile(rater_c.id, name="Саша", age=21, gender="male", search_gender="any", city=None, bio="", photos=["c-photo"])
 
         await service.rate(rater_a.id, target.id, "Chad")
         await service.rate(rater_b.id, target.id, "Chad-lite")
