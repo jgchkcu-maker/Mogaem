@@ -1,103 +1,18 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { CaretRight, Flame, Heart, Sword, Trophy, UserCircle } from '@phosphor-icons/react'
-import { ApiError, api } from './api'
-import type {
-  BattlePlayer,
-  BattleResponse,
-  LeaderboardEntry,
-  MatchItem,
-  MeResponse,
-  Profile,
-  RatingCandidateResponse,
-  SearchGender,
-} from './types'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Flame, Heart, Sword, Trophy, UserCircle, WarningCircle } from '@phosphor-icons/react'
+import { api } from './api'
+import { errorText, haptic } from './lib'
+import type { MeResponse } from './types'
+import { BattleScreen } from './screens/BattleScreen'
+import { LeaderboardScreen } from './screens/LeaderboardScreen'
+import { MatchesScreen } from './screens/MatchesScreen'
+import { ProfileScreen } from './screens/ProfileScreen'
+import { RateScreen } from './screens/RateScreen'
 
 type Tab = 'battle' | 'rate' | 'leaderboard' | 'matches' | 'profile'
 
-const mogNames: Record<number, string> = {
-  10: 'Гигачад',
-  9: 'Чад',
-  8: 'Чадлайт',
-  7: 'HTN',
-  6: 'MTN',
-  5: 'LTN',
-  4: 'Сабнорми',
-  3: 'Инцел-тир',
-  2: 'Труцел',
-  1: 'Блэкпилл',
-}
-
-function haptic(kind: 'select' | 'success' | 'error' = 'select') {
-  const feedback = window.Telegram?.WebApp?.HapticFeedback
-  if (!feedback) return
-  if (kind === 'select') feedback.selectionChanged()
-  else feedback.notificationOccurred(kind)
-}
-
-function errorText(error: unknown): string {
-  if (error instanceof ApiError || error instanceof Error) return error.message
-  return 'Что-то пошло не так'
-}
-
-function usePhoto(userId: number | null, position = 0) {
-  const [url, setUrl] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!userId) {
-      setUrl(null)
-      return
-    }
-    let alive = true
-    let objectUrl: string | null = null
-    api.photoBlobUrl(userId, position)
-      .then((nextUrl) => {
-        objectUrl = nextUrl
-        if (alive) setUrl(nextUrl)
-      })
-      .catch(() => {
-        if (alive) setUrl(null)
-      })
-    return () => {
-      alive = false
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-    }
-  }, [userId, position])
-
-  return url
-}
-
-function ScreenHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <header className="screen-header">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </header>
-  )
-}
-
-function StateCard({ children }: { children: ReactNode }) {
-  return <div className="state-card">{children}</div>
-}
-
-function LoadingLabel({ text }: { text: string }) {
-  return <span className="visually-hidden">{text}</span>
-}
-
-function Skeleton({ className }: { className: string }) {
-  return <div className={`skeleton ${className}`} aria-hidden="true" />
-}
-
-function Avatar({ userId }: { userId: number }) {
-  const photo = usePhoto(userId)
-  return (
-    <div className="row-avatar">
-      {photo ? <img src={photo} alt="" /> : <div className="photo-placeholder">MOG</div>}
-    </div>
-  )
-}
-
 function NavIcon({ tab, active }: { tab: Tab; active: boolean }) {
-  // SF Symbols convention: outline at rest, filled when the tab is active.
+  // Outline at rest, filled when the tab is active.
   const weight = active ? 'fill' : 'regular'
   const iconProps = {
     className: 'nav-icon',
@@ -111,348 +26,6 @@ function NavIcon({ tab, active }: { tab: Tab; active: boolean }) {
   if (tab === 'leaderboard') return <Trophy {...iconProps} />
   if (tab === 'matches') return <Heart {...iconProps} />
   return <UserCircle {...iconProps} />
-}
-
-function PlayerCard({ player, onChoose, disabled }: { player: BattlePlayer; onChoose: () => void; disabled: boolean }) {
-  const photo = usePhoto(player.user_id)
-  return (
-    <button className="battle-card" onClick={onChoose} disabled={disabled} type="button">
-      <div className="photo-shell">
-        {photo ? <img src={photo} alt={player.name} /> : <div className="photo-placeholder">MOG</div>}
-        <div className="elo-badge">{player.elo} ELO</div>
-      </div>
-      <div className="battle-card-copy">
-        <strong>{player.name}, {player.age}</strong>
-        <span>{player.city || 'Город не указан'}</span>
-        <small>{player.calibrating ? `[Калибровка ${player.battles}/10]` : `${player.wins}W · ${player.losses}L`}</small>
-      </div>
-    </button>
-  )
-}
-
-function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> }) {
-  const [battle, setBattle] = useState<BattleResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [voting, setVoting] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    setMessage(null)
-    setVoting(false)
-    try {
-      setBattle(await api.nextBattle())
-    } catch (err) {
-      setError(errorText(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { void load() }, [load])
-
-  const vote = async (winnerId: number) => {
-    if (!battle || voting) return
-    setVoting(true)
-    haptic('select')
-    try {
-      const before = winnerId === battle.left.user_id ? battle.left.elo : battle.right.elo
-      const result = await api.voteBattle(battle.battle_id, winnerId)
-      const delta = result.winner.elo - before
-      setMessage(`${result.winner.name} MOG’ает · +${delta} ELO`)
-      haptic('success')
-      await onStatsChanged()
-      // Stay disabled until the next pair replaces this one so a fast second
-      // tap cannot re-submit the same battle.
-      window.setTimeout(() => { void load() }, 650)
-    } catch (err) {
-      setError(errorText(err))
-      haptic('error')
-      setVoting(false)
-    }
-  }
-
-  return (
-    <section className="screen">
-      <ScreenHeader title="Кто MOG’ает?" subtitle="Выбери сильнейшую внешку. Elo пересчитается сразу." />
-      {loading && (
-        <div className="battle-grid" aria-busy="true">
-          {[0, 1].map((side) => (
-            <div className="battle-card" key={side} aria-hidden="true">
-              <Skeleton className="skeleton-photo" />
-              <div className="battle-card-copy">
-                <Skeleton className="skeleton-line" />
-                <Skeleton className="skeleton-line short" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => void load()} type="button">Повторить</button></StateCard>}
-      {!loading && !error && !battle && <StateCard><b>Пары закончились</b><span>Нужны ещё активные анкеты одного пола или новые сочетания.</span></StateCard>}
-      {!loading && battle && (
-        <>
-          <div className="battle-grid">
-            <PlayerCard player={battle.left} disabled={voting} onChoose={() => void vote(battle.left.user_id)} />
-            <div className="versus">VS</div>
-            <PlayerCard player={battle.right} disabled={voting} onChoose={() => void vote(battle.right.user_id)} />
-          </div>
-          <div className={`battle-result ${message ? 'show' : ''}`} aria-live="polite">{message || 'Тапни по победителю'}</div>
-        </>
-      )}
-    </section>
-  )
-}
-
-function RatingCard({ profile }: { profile: Profile }) {
-  const photo = usePhoto(profile.user_id)
-  return (
-    <div className="rating-profile">
-      <div className="rating-photo">
-        {photo ? <img src={photo} alt={profile.name} /> : <div className="photo-placeholder">MOG</div>}
-      </div>
-      <div>
-        <h2>{profile.name}, {profile.age}</h2>
-        <p>{profile.city || 'Город не указан'}</p>
-      </div>
-    </div>
-  )
-}
-
-function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> }) {
-  const [candidate, setCandidate] = useState<RatingCandidateResponse | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      setCandidate(await api.nextRating())
-    } catch (err) {
-      setError(errorText(err))
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { void load() }, [load])
-
-  const rate = async (score: number) => {
-    if (!candidate || sending) return
-    setSending(true)
-    haptic('select')
-    try {
-      await api.rate(candidate.profile.user_id, score)
-      haptic('success')
-      await onStatsChanged()
-      await load()
-    } catch (err) {
-      setError(errorText(err))
-      haptic('error')
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <section className="screen">
-      <ScreenHeader title="Оцени внешность" subtitle="Оценка 1–10 идёт в средний MOG Score и не смешивается с Battle Elo." />
-      {loading && (
-        <div aria-busy="true">
-          <div className="rating-profile" aria-hidden="true">
-            <Skeleton className="skeleton-rating-photo" />
-            <div>
-              <Skeleton className="skeleton-line" />
-              <Skeleton className="skeleton-line short" />
-            </div>
-          </div>
-          <LoadingLabel text="Ищем следующую анкету" />
-        </div>
-      )}
-      {!loading && error && <StateCard><b>Ошибка</b><span>{error}</span><button onClick={() => void load()} type="button">Повторить</button></StateCard>}
-      {!loading && !error && !candidate && <StateCard><b>Ты всё оценил</b><span>Новые анкеты появятся здесь автоматически.</span></StateCard>}
-      {!loading && candidate && (
-        <>
-          <RatingCard profile={candidate.profile} />
-          <div className="score-grid">
-            {Array.from({ length: 10 }, (_, index) => 10 - index).map((score) => (
-              <button className="score-button" key={score} disabled={sending} onClick={() => void rate(score)} type="button">
-                <strong>{score}</strong>
-                <span>{mogNames[score]}</span>
-              </button>
-            ))}
-          </div>
-          <div className="current-score">Сейчас: {candidate.mog.average.toFixed(1)}/10 · {candidate.mog.count} оценок</div>
-        </>
-      )}
-    </section>
-  )
-}
-
-function LeaderboardScreen() {
-  const [gender, setGender] = useState<SearchGender>('any')
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [reloadToken, setReloadToken] = useState(0)
-
-  useEffect(() => {
-    let active = true
-    setLoading(true)
-    setError(null)
-    api.leaderboard(gender)
-      .then((rows) => { if (active) setEntries(rows) })
-      .catch((err) => { if (active) setError(errorText(err)) })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [gender, reloadToken])
-
-  const rankClass = (entry: LeaderboardEntry) => {
-    if (entry.calibrating || !entry.rank) return ''
-    if (entry.rank === 1) return ' rank-gold'
-    if (entry.rank === 2) return ' rank-silver'
-    if (entry.rank === 3) return ' rank-bronze'
-    return ''
-  }
-
-  return (
-    <section className="screen">
-      <ScreenHeader title="Рейтинг MOG" subtitle="Battle Elo показывает сравнительную силу, а не среднюю оценку 1–10." />
-      <div className="segmented" role="group" aria-label="Фильтр рейтинга">
-        {([['any', 'Все'], ['male', 'Парни'], ['female', 'Девушки']] as const).map(([value, label]) => (
-          <button className={gender === value ? 'active' : ''} key={value} onClick={() => setGender(value)} type="button" aria-pressed={gender === value}>{label}</button>
-        ))}
-      </div>
-      {loading && (
-        <div className="leaderboard-list" aria-busy="true">
-          <LoadingLabel text="Считаем таблицу" />
-          {Array.from({ length: 6 }, (_, row) => (
-            <div className="leaderboard-row" key={row} aria-hidden="true">
-              <Skeleton className="skeleton-rank" />
-              <Skeleton className="skeleton-row-avatar" />
-              <div className="leader-copy">
-                <Skeleton className="skeleton-line" />
-                <Skeleton className="skeleton-line short" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
-      {!loading && !error && entries.length === 0 && <StateCard>Пока нет анкет для рейтинга.</StateCard>}
-      <div className="leaderboard-list">
-        {entries.map((entry, index) => (
-          <div
-            className={`leaderboard-row${entry.rank === 1 ? ' top-1' : ''}`}
-            key={entry.user_id}
-            style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
-          >
-            <span className={`rank${rankClass(entry)}`}>{entry.calibrating ? '-' : `#${entry.rank ?? index + 1}`}</span>
-            <Avatar userId={entry.user_id} />
-            <div className="leader-copy">
-              <strong>{entry.name}, {entry.age}</strong>
-              <small>{entry.calibrating ? `[Калибровка ${entry.battles}/10]` : `${entry.wins}W · ${entry.losses}L${entry.percentile == null ? '' : `, top ${entry.percentile}%`}`}</small>
-            </div>
-            <b>{entry.elo}</b>
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function MatchesScreen() {
-  const [matches, setMatches] = useState<MatchItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [reloadToken, setReloadToken] = useState(0)
-
-  useEffect(() => {
-    let active = true
-    setLoading(true)
-    setError(null)
-    api.matches()
-      .then((rows) => { if (active) setMatches(rows) })
-      .catch((err) => { if (active) setError(errorText(err)) })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [reloadToken])
-
-  return (
-    <section className="screen">
-      <ScreenHeader title="Ваши матчи" subtitle="Здесь появляются принятые запросы. Новые запросы и уведомления пока остаются в боте." />
-      {loading && (
-        <div className="match-list" aria-busy="true">
-          <LoadingLabel text="Загружаем матчи" />
-          {Array.from({ length: 3 }, (_, row) => (
-            <div className="match-row" key={row} aria-hidden="true">
-              <Skeleton className="skeleton-row-avatar" />
-              <div className="match-copy">
-                <Skeleton className="skeleton-line" />
-                <Skeleton className="skeleton-line short" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
-      {!loading && !error && matches.length === 0 && <StateCard><b>Матчей пока нет</b><span>Взаимно оцените друг друга в основном MOG-фиде и отправьте запрос через бота.</span></StateCard>}
-      <div className="match-list">
-        {matches.map((match) => (
-          <a className="match-row" href={match.contact_url} key={match.user_id}>
-            <Avatar userId={match.user_id} />
-            <div className="match-copy">
-              <strong>{match.name}, {match.age}</strong>
-              <span>{match.city || 'Город не указан'}</span>
-            </div>
-            <CaretRight size={16} weight="bold" className="row-chevron" aria-hidden={true} />
-          </a>
-        ))}
-      </div>
-    </section>
-  )
-}
-
-function ProfileScreen({ me }: { me: MeResponse }) {
-  const photo = usePhoto(me.profile.user_id)
-  const winrate = me.battle.battles ? Math.round((me.battle.wins / me.battle.battles) * 100) : 0
-  return (
-    <section className="screen">
-      <ScreenHeader title="Твоя MOG-карточка" subtitle="Два независимых рейтинга: средняя оценка и сравнительный Battle Elo." />
-      <div className="profile-hero">
-        <div className="profile-avatar">{photo ? <img src={photo} alt={me.profile.name} /> : <div className="photo-placeholder">MOG</div>}</div>
-        <div>
-          <h2>{me.profile.name}, {me.profile.age}</h2>
-          <p>{me.profile.city || 'Город не указан'}</p>
-        </div>
-      </div>
-      <div className="profile-panels">
-        <div className="ratings-duel">
-          <div className="duel-cell">
-            <span>MOG Score</span>
-            <b>{me.mog.average.toFixed(1)}<small> /10</small></b>
-            <small>{me.mog.count} оценок</small>
-          </div>
-          <div className="duel-divider" aria-hidden="true" />
-          <div className="duel-cell">
-            <span>Battle Elo</span>
-            <b>{me.battle.elo}</b>
-            <small>{me.battle.calibrating ? `Калибровка ${me.battle.battles}/10` : `${me.battle.battles} баттлов`}</small>
-          </div>
-        </div>
-        <div className="battle-record">
-          <div><b>{me.battle.wins}</b><span>победы</span></div>
-          <div><b>{me.battle.losses}</b><span>поражения</span></div>
-          <div className="record-winrate"><b>{winrate}%</b><span>winrate</span></div>
-        </div>
-      </div>
-      <div className="profile-note">Редактирование анкеты, включение/отключение и фото пока остаются в Telegram-боте. Данные уже общие с Mini App.</div>
-    </section>
-  )
 }
 
 const navItems: Array<{ id: Tab; label: string }> = [
@@ -495,7 +68,13 @@ export default function App() {
   }, [me, tab, refreshMe])
 
   if (loading) {
-    return <main className="boot"><div className="logo-mark">M</div><b>Mogaem</b><span>Загружаем твой рейтинг…</span></main>
+    return (
+      <main className="boot">
+        <div className="logo-mark">M</div>
+        <b>Mogaem</b>
+        <span>Загружаем твой рейтинг…</span>
+      </main>
+    )
   }
 
   if (error && !me) {
@@ -504,7 +83,9 @@ export default function App() {
         <div className="logo-mark">!</div>
         <b>Mini App не открылся</b>
         <span>{error}</span>
-        <button className="" onClick={() => window.location.reload()} type="button">Попробовать снова</button>
+        <button onClick={() => window.location.reload()} type="button">
+          Попробовать снова
+        </button>
       </main>
     )
   }
@@ -517,7 +98,10 @@ export default function App() {
           <button
             className={tab === item.id ? 'active' : ''}
             key={item.id}
-            onClick={() => { setTab(item.id); haptic('select') }}
+            onClick={() => {
+              setTab(item.id)
+              haptic('select')
+            }}
             type="button"
             aria-current={tab === item.id ? 'page' : undefined}
           >

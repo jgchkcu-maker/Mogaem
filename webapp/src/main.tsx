@@ -1,12 +1,17 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import '@fontsource/golos-text/400.css'
+import '@fontsource/golos-text/500.css'
+import '@fontsource/golos-text/600.css'
+import '@fontsource/unbounded/600.css'
+import '@fontsource/unbounded/700.css'
 import './styles.css'
 
 // Appearance follows the Telegram client color scheme (official WebApp
 // recommendation); outside Telegram it falls back to the OS setting. The
-// palette itself is Mogaem's Apple-HIG system: raw themeParams are not
-// consumed, because user-made Telegram themes would break the design.
+// palette itself is Mogaem's arena design: raw themeParams are not consumed,
+// because user-made Telegram themes would break the design.
 function systemScheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
@@ -16,8 +21,8 @@ const tg = window.Telegram?.WebApp
 function applyScheme() {
   const scheme = tg?.colorScheme === 'light' || tg?.colorScheme === 'dark' ? tg.colorScheme : systemScheme()
   document.documentElement.dataset.scheme = scheme
-  // Chrome color matches systemBackground of the active appearance.
-  const chrome = scheme === 'dark' ? '#000000' : '#f2f2f7'
+  // Chrome color matches the page background of the active appearance.
+  const chrome = scheme === 'dark' ? '#0e100b' : '#f3f4ea'
   try {
     tg?.setHeaderColor?.(chrome)
     tg?.setBackgroundColor?.(chrome)
