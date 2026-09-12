@@ -38,7 +38,7 @@ async def test_miniapp_api_exposes_profile_battle_leaderboard_rating_and_matches
         assert health.json() == {"status": "ok"}
 
         me = await client.get("/api/me")
-        assert me.status_code == 200
+        assert me.status_code == 200, me.text
         body = me.json()
         assert body["profile"]["name"] == "Viewer"
         assert body["mog"]["average"] == 0.0
@@ -46,7 +46,7 @@ async def test_miniapp_api_exposes_profile_battle_leaderboard_rating_and_matches
         assert body["battle"]["calibrating"] is True
 
         battle = await client.get("/api/battle/next")
-        assert battle.status_code == 200
+        assert battle.status_code == 200, battle.text
         battle_body = battle.json()
         assert battle_body["battle_id"]
         assert {battle_body["left"]["name"], battle_body["right"]["name"]} == {"Alpha", "Beta"}
@@ -55,18 +55,18 @@ async def test_miniapp_api_exposes_profile_battle_leaderboard_rating_and_matches
             f"/api/battle/{battle_body['battle_id']}/vote",
             json={"winner_id": battle_body["left"]["user_id"]},
         )
-        assert vote.status_code == 200
+        assert vote.status_code == 200, vote.text
         vote_body = vote.json()
         assert vote_body["winner"]["elo"] > 1000
         assert vote_body["loser"]["elo"] < 1000
 
         board = await client.get("/api/leaderboard", params={"gender": "male"})
-        assert board.status_code == 200
+        assert board.status_code == 200, board.text
         names = [entry["name"] for entry in board.json()["entries"]]
         assert {"Viewer", "Alpha", "Beta"}.issubset(set(names))
 
         candidate = await client.get("/api/rate/next")
-        assert candidate.status_code == 200
+        assert candidate.status_code == 200, candidate.text
         candidate_body = candidate.json()
         assert candidate_body["profile"]["user_id"] != viewer.id
 
@@ -74,11 +74,11 @@ async def test_miniapp_api_exposes_profile_battle_leaderboard_rating_and_matches
             f"/api/rate/{candidate_body['profile']['user_id']}",
             json={"score": 8},
         )
-        assert rated.status_code == 200
+        assert rated.status_code == 200, rated.text
         assert rated.json()["score"] == 8
 
         matches = await client.get("/api/matches")
-        assert matches.status_code == 200
+        assert matches.status_code == 200, matches.text
         assert matches.json() == {"matches": []}
 
     await engine.dispose()
