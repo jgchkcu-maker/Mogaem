@@ -49,12 +49,12 @@ async def test_profile_view_aggregates_received_mog_ratings():
         await service.save_profile(rater_b.id, name="Бета", age=20, gender="female", search_gender="any", city=None, bio="", photos=["b-photo"])
         await service.save_profile(rater_c.id, name="Саша", age=21, gender="male", search_gender="any", city=None, bio="", photos=["c-photo"])
 
-        await service.rate(rater_a.id, target.id, "Chad")
-        await service.rate(rater_b.id, target.id, "Chad-lite")
-        await service.rate(rater_c.id, target.id, "Normie")
+        await service.rate(rater_a.id, target.id, "10")
+        await service.rate(rater_b.id, target.id, "9")
+        await service.rate(rater_c.id, target.id, "8")
 
         view = await service.profile_view(target.id)
         assert view.rating_count == 3
-        assert view.rating_average == 8.0
+        assert view.rating_average == 9.0
 
     await engine.dispose()

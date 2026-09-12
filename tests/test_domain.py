@@ -33,22 +33,22 @@ def test_candidate_excludes_self_and_already_rated():
 
 
 def test_duplicate_rating_rejected():
-    ratings = {(1, 2): "Chad"}
+    ratings = {(1, 2): "9"}
     with pytest.raises(DuplicateRatingError):
-        create_rating(ratings, rater_id=1, rated_id=2, label="Normie")
+        create_rating(ratings, rater_id=1, rated_id=2, label="6")
 
 
 def test_chat_request_needs_reciprocal_ratings():
-    ratings = {(1, 2): "Chad"}
+    ratings = {(1, 2): "9"}
     with pytest.raises(ReciprocalRatingRequired):
         create_chat_request([], ratings, requester_id=2, recipient_id=1)
 
 
 def test_chat_request_contains_both_ratings():
-    ratings = {(1, 2): "Chad", (2, 1): "Chad-lite"}
+    ratings = {(1, 2): "9", (2, 1): "8"}
     request = create_chat_request([], ratings, requester_id=2, recipient_id=1)
-    assert request["requester_rating"] == "Chad-lite"
-    assert request["recipient_rating"] == "Chad"
+    assert request["requester_rating"] == "8"
+    assert request["recipient_rating"] == "9"
     assert request["status"] == "pending"
 
 

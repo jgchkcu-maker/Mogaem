@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from ..domain import DuplicateRatingError
 from ..keyboards import RATING_CODES, after_rating_keyboard, main_menu, rating_keyboard
 from ..presentation import send_profile_card
-from ..render import RATING_DISPLAY
+from ..render import RATING_DISPLAY, RATING_SCALE_TEXT
 from ..services import MogaemService
 
 router = Router(name="browse")
@@ -28,6 +28,13 @@ async def browse(callback: CallbackQuery, session_factory: async_sessionmaker[As
             await callback.message.answer("Пока подходящие анкеты закончились. Загляни позже.", reply_markup=main_menu())
         return
     await send_profile_card(callback.bot, callback.from_user.id, candidate, reply_markup=rating_keyboard(candidate.user_id))
+
+
+@router.callback_query(F.data == "rating:scale")
+async def rating_scale(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if callback.message:
+        await callback.message.answer(RATING_SCALE_TEXT)
 
 
 @router.callback_query(F.data.startswith("rate:"))
