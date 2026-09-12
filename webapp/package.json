@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test:ui": "node --test scripts/liquid-glass.test.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
