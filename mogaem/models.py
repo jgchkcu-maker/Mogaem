@@ -57,6 +57,37 @@ class Rating(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
+class BattleRating(Base):
+    __tablename__ = "battle_ratings"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    elo: Mapped[int] = mapped_column(Integer, nullable=False, default=1000, index=True)
+    battles: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class Battle(Base):
+    __tablename__ = "battles"
+    __table_args__ = (UniqueConstraint("voter_id", "pair_low_id", "pair_high_id", name="uq_battle_voter_pair"),)
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    voter_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    left_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    right_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    pair_low_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    pair_high_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    winner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    loser_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    winner_elo_before: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    winner_elo_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    loser_elo_before: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    loser_elo_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
 class ChatRequest(Base):
     __tablename__ = "chat_requests"
 
