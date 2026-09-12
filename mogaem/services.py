@@ -7,7 +7,7 @@ from sqlalchemy import and_, delete, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .domain import DuplicateChatRequestError, DuplicateRatingError, ReciprocalRatingRequired, RATING_LABELS, validate_profile
+from .domain import DuplicateChatRequestError, DuplicateRatingError, ReciprocalRatingRequired, RATING_LABELS, RATING_SCORES, validate_profile
 from .models import ChatRequest, Match, Photo, Profile, Rating, User
 
 
@@ -31,6 +31,8 @@ class ProfileView:
     city: str | None
     bio: str
     photos: list[str]
+    rating_average: float = 0.0
+    rating_count: int = 0
 
 
 class MogaemService:
@@ -88,12 +90,20 @@ class MogaemService:
         profile.search_gender = value
         await self.session.commit()
 
+    async def rating_stats(self, user_id: int) -> tuple[float, int]:
+        labels = list((await self.session.scalars(select(Rating.label).where(Rating.rated_id == user_id))).all())
+        scores = [RATING_SCORES[label] for label in labels if label in RATING_SCORES]
+        if not scores:
+            return 0.0, 0
+        return round(sum(scores) / len(scores), 1), len(scores)
+
     async def profile_view(self, user_id: int) -> ProfileView:
         profile = await self.session.get(Profile, user_id)
         user = await self.session.get(User, user_id)
         if profile is None or user is None:
             raise NotFoundError("profile not found")
         photos = list((await self.session.scalars(select(Photo.file_id).where(Photo.user_id == user_id).order_by(Photo.position))).all())
+        rating_average, rating_count = await self.rating_stats(user_id)
         return ProfileView(
             user_id=user_id,
             telegram_id=user.telegram_id,
@@ -105,6 +115,8 @@ class MogaemService:
             city=profile.city,
             bio=profile.bio,
             photos=photos,
+            rating_average=rating_average,
+            rating_count=rating_count,
         )
 
     async def next_candidate(self, viewer_id: int) -> ProfileView | None:
