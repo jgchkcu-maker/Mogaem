@@ -33,17 +33,22 @@ test('typography is the Mogaem identity: Unbounded display + Golos Text UI, self
   assert.doesNotMatch(styles, /font-family: -apple-system/)
 })
 
-test('both appearances ship the arena palette with the single acid accent', () => {
-  assert.match(styles, /--accent: #c9f24b/) // light
-  assert.match(styles, /--accent: #c9f24b/) // dark
-  assert.match(styles, /--accent-ink: #161807/)
-  assert.match(styles, /--bg: #f3f4ea/) // light warm off-white
-  assert.match(styles, /--bg: #0e100b/) // dark warm near-black
-  assert.match(styles, /--label: #171a0e/)
-  assert.match(styles, /--label: #f2f4e8/)
+test('both appearances ship the arena palette with the single hot accent', () => {
+  assert.match(styles, /--accent: #ff6d29/) // light
+  assert.match(styles, /--accent: #ff6d29/) // dark
+  assert.match(styles, /--accent-ink: #161316/)
+  assert.match(styles, /--accent-text: #b8410c/) // light: darkened orange for contrast
+  assert.match(styles, /--bg: #f4f2ee/) // light warm off-white
+  assert.match(styles, /--bg: #161316/) // dark warm near-black
+  assert.match(styles, /--label: #1b161a/)
+  assert.match(styles, /--label: #f5f2f0/)
+  // Brown is a spot tone, never the page base.
+  assert.match(styles, /--brown: #453027/)
+  assert.match(styles, /--seg-thumb: #453027/)
   assert.match(styles, /data-scheme='dark'/)
-  // The palette is Mogaem's: no stock iOS tints, no raw Telegram themes.
-  assert.doesNotMatch(styles, /007aff|0a84ff/)
+  // The palette is Mogaem's: no stock iOS tints, no raw Telegram themes,
+  // and the previous lime identity is gone.
+  assert.doesNotMatch(styles, /007aff|0a84ff|c9f24b/)
   assert.doesNotMatch(styles, /--tg-theme-/)
 })
 
@@ -53,14 +58,15 @@ test('appearance switches with the Telegram client and falls back to the OS', ()
   assert.match(bootstrap, /themeChanged/)
   assert.match(bootstrap, /prefers-color-scheme: dark/)
   // Chrome colors match the page backgrounds of both appearances.
-  assert.match(bootstrap, /#0e100b/)
-  assert.match(bootstrap, /#f3f4ea/)
+  assert.match(bootstrap, /#161316/)
+  assert.match(bootstrap, /#f4f2ee/)
 })
 
 test('index.html chrome matches the tokens', () => {
-  assert.match(html, /content="#f3f4ea"/)
-  assert.match(html, /content="#0e100b"/)
-  assert.match(html, /fill='%23c9f24b'/)
+  assert.match(html, /content="#f4f2ee"/)
+  assert.match(html, /content="#161316"/)
+  assert.match(html, /fill='%23ff6d29'/)
+  assert.match(html, /fill='%23161316'/)
 })
 
 test('gradients are reserved for photo scrims and the slider track', () => {

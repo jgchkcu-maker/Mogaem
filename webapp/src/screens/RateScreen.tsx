@@ -19,9 +19,10 @@ const mogNames: Record<number, string> = {
   1: 'Блэкпилл',
 }
 
-// Tier hue walks from red (score 1) to acid lime (score 10).
+// Tier hue walks the heat scale: deep red at the bottom tier (Блэкпилл, 1)
+// up to gold at the top (Гигачад, 10).
 function tierHue(score: number): number {
-  return Math.round(4 + ((score - 1) / 9) * 72)
+  return Math.round(((score - 1) / 9) * 38)
 }
 
 export function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> }) {

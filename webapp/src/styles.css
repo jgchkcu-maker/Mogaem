@@ -3,8 +3,10 @@
    cards fill the screen and the chrome recedes into a warm near-black base.
    Identity comes from two self-hosted families with full Cyrillic support:
    Unbounded for display type (titles, big numbers) and Golos Text for UI
-   text, plus a single acid-lime accent (#c9f24b) that always carries dark
-   ink text. Dark is the primary scheme; light is fully supported and
+   text, plus a single hot-orange accent (#ff6d29) that always carries dark
+   ink text. The warm brown (#453027) is reserved for spot uses: segmented
+   thumb, scrims and fills — never large surfaces, so photos keep their
+   separation. Dark is the primary scheme; light is fully supported and
    switched by the Telegram client colorScheme (see main.tsx).
    Gradients are allowed in exactly two places: photo scrims (legibility
    overlays) and the slider track fill. Corner radii come from the scale
@@ -24,25 +26,26 @@
   --safe-left: max(env(safe-area-inset-left, 0px), var(--tg-safe-left, 0px));
 
   /* Light scheme */
-  --bg: #f3f4ea;
-  --surface: #fcfcf6;
-  --fill: rgba(23, 26, 14, 0.07);
-  --fill-strong: rgba(23, 26, 14, 0.13);
-  --label: #171a0e;
-  --label-2: rgba(23, 26, 14, 0.64);
-  --label-3: rgba(23, 26, 14, 0.4);
-  --separator: rgba(23, 26, 14, 0.12);
-  --accent: #c9f24b;
-  --accent-ink: #161807;
-  --accent-text: #55661a;
+  --bg: #f4f2ee;
+  --surface: #fdfcfa;
+  --fill: rgba(27, 22, 26, 0.07);
+  --fill-strong: rgba(27, 22, 26, 0.13);
+  --label: #1b161a;
+  --label-2: rgba(27, 22, 26, 0.64);
+  --label-3: rgba(27, 22, 26, 0.4);
+  --separator: rgba(27, 22, 26, 0.12);
+  --accent: #ff6d29;
+  --accent-ink: #161316;
+  --accent-text: #b8410c;
   --danger: #d43425;
+  --brown: #453027;
   --silver: #79808f;
   --bronze: #9c6a3a;
-  --tab-bg: rgba(248, 249, 240, 0.9);
-  --tab-bg-solid: #f8f9f0;
-  --tab-inactive: rgba(23, 26, 14, 0.45);
+  --tab-bg: rgba(250, 248, 246, 0.9);
+  --tab-bg-solid: #faf8f6;
+  --tab-inactive: rgba(27, 22, 26, 0.45);
   --seg-thumb: #ffffff;
-  --shadow-1: 0 10px 30px rgba(40, 44, 20, 0.14);
+  --shadow-1: 0 10px 30px rgba(60, 40, 25, 0.14);
 
   font-family: var(--font-text);
   color: var(--label);
@@ -55,25 +58,26 @@
 
 html[data-scheme='dark'] {
   /* Dark scheme (primary) */
-  --bg: #0e100b;
-  --surface: #181b10;
-  --fill: rgba(242, 244, 232, 0.08);
-  --fill-strong: rgba(242, 244, 232, 0.14);
-  --label: #f2f4e8;
-  --label-2: rgba(242, 244, 232, 0.64);
-  --label-3: rgba(242, 244, 232, 0.38);
-  --separator: rgba(242, 244, 232, 0.12);
-  --accent: #c9f24b;
-  --accent-ink: #161807;
-  --accent-text: #d3f95e;
-  --danger: #ff5f52;
+  --bg: #161316;
+  --surface: #211c20;
+  --fill: rgba(245, 242, 240, 0.08);
+  --fill-strong: rgba(245, 242, 240, 0.14);
+  --label: #f5f2f0;
+  --label-2: rgba(245, 242, 240, 0.64);
+  --label-3: rgba(245, 242, 240, 0.38);
+  --separator: rgba(245, 242, 240, 0.12);
+  --accent: #ff6d29;
+  --accent-ink: #161316;
+  --accent-text: #ff8b52;
+  --danger: #e5484d;
+  --brown: #453027;
   --silver: #c9d0dc;
   --bronze: #dba06a;
-  --tab-bg: rgba(20, 23, 13, 0.86);
-  --tab-bg-solid: #161910;
-  --tab-inactive: rgba(242, 244, 232, 0.45);
-  --seg-thumb: #343a20;
-  --shadow-1: 0 12px 32px rgba(5, 6, 2, 0.5);
+  --tab-bg: rgba(26, 21, 25, 0.86);
+  --tab-bg-solid: #1d181c;
+  --tab-inactive: rgba(245, 242, 240, 0.45);
+  --seg-thumb: #453027;
+  --shadow-1: 0 12px 32px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
@@ -369,12 +373,12 @@ img {
   border-radius: 14px;
 }
 
-/* Dark gradient scrim that keeps white copy legible on any photo. */
+/* Warm brown-black scrim that keeps white copy legible on any photo. */
 .photo-scrim {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(180deg, rgba(9, 11, 5, 0) 42%, rgba(9, 11, 5, 0.6) 70%, rgba(9, 11, 5, 0.9) 100%);
+  background: linear-gradient(180deg, rgba(24, 14, 10, 0) 42%, rgba(24, 14, 10, 0.6) 70%, rgba(24, 14, 10, 0.9) 100%);
   pointer-events: none;
 }
 
@@ -514,7 +518,7 @@ img {
   padding: 9px 14px;
   overflow: hidden;
   transform: translateX(-50%);
-  background: rgba(9, 11, 5, 0.62);
+  background: rgba(24, 14, 10, 0.62);
   color: rgba(255, 255, 255, 0.85);
   font-size: 14px;
   font-weight: 500;
@@ -564,7 +568,7 @@ img {
   top: 12px;
   left: 12px;
   padding: 6px 10px;
-  background: rgba(9, 11, 5, 0.55);
+  background: rgba(24, 14, 10, 0.55);
   color: rgba(255, 255, 255, 0.92);
   font-size: 12.5px;
   font-weight: 500;

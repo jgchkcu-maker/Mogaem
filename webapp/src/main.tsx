@@ -22,7 +22,7 @@ function applyScheme() {
   const scheme = tg?.colorScheme === 'light' || tg?.colorScheme === 'dark' ? tg.colorScheme : systemScheme()
   document.documentElement.dataset.scheme = scheme
   // Chrome color matches the page background of the active appearance.
-  const chrome = scheme === 'dark' ? '#0e100b' : '#f3f4ea'
+  const chrome = scheme === 'dark' ? '#161316' : '#f4f2ee'
   try {
     tg?.setHeaderColor?.(chrome)
     tg?.setBackgroundColor?.(chrome)
