@@ -69,14 +69,14 @@ test('index.html chrome matches the tokens', () => {
   assert.match(html, /fill='%23161316'/)
 })
 
-test('gradients are reserved for photo scrims and the slider track', () => {
+test('gradients are reserved for photo scrims, the slider track and the glass gloss', () => {
   const blocks = cssBlocks(styles)
   const withGradients = blocks.filter((block) => /(linear|radial|conic)-gradient\(/.test(block.body))
   assert.ok(withGradients.length >= 2, 'expected scrim + slider track gradients')
   for (const block of withGradients) {
     assert.match(
       block.selector,
-      /photo-scrim|slider-runnable-track/,
+      /photo-scrim|slider-runnable-track|bottom-nav|nav-thumb/,
       `gradient in unexpected block: ${block.selector}`,
     )
   }
@@ -101,7 +101,7 @@ test('transitions interpolate and never use linear or ease-in-out', () => {
   for (const transition of transitions) {
     assert.doesNotMatch(transition, /ease-in-out/)
     assert.doesNotMatch(transition, /[\s:,]all[\s,;]/)
-    assert.match(transition, /ease-out|var\(--ease\)/)
+    assert.match(transition, /ease-out|var\(--ease[a-z-]*\)/)
   }
 })
 
@@ -206,16 +206,20 @@ test('leaderboard and matches reuse the authenticated photo proxy for avatars', 
   assert.match(photo, /api\.photoBlobUrl/)
 })
 
-test('translucent material is reserved for the tab bar', () => {
-  const navBlock = styles.match(/\.bottom-nav \{[\s\S]*?\}/)?.[0] ?? ''
-  assert.match(navBlock, /backdrop-filter/)
-  // every backdrop-filter occurrence is either the tab bar (with webkit
-  // prefix) or the @supports guard that provides the opaque fallback
+test('translucent material is reserved for the tab bar glass', () => {
+  const navMatch = styles.match(/\.bottom-nav \{[^}]*backdrop-filter[^}]*\}/)
+  const thumbMatch = styles.match(/\.nav-thumb \{[^}]*backdrop-filter[^}]*\}/)
+  assert.ok(navMatch, 'nav pill must carry the blur material')
+  assert.ok(thumbMatch, 'sliding thumb must carry the blur material')
+  // every backdrop-filter occurrence is either the tab bar glass layers
+  // (nav pill with webkit prefix, sliding thumb) or the @supports guard that
+  // provides the opaque fallback
   for (const match of styles.matchAll(/backdrop-filter/g)) {
     const { index } = match
-    const inNav = index !== undefined && index >= styles.indexOf('.bottom-nav {') && index <= styles.indexOf('.bottom-nav {') + navBlock.length
+    const inNav = index !== undefined && navMatch.index !== undefined && index >= navMatch.index && index <= navMatch.index + navMatch[0].length
+    const inThumb = index !== undefined && thumbMatch.index !== undefined && index >= thumbMatch.index && index <= thumbMatch.index + thumbMatch[0].length
     const inSupports = styles.lastIndexOf('@supports', index) > styles.lastIndexOf('}', index)
-    assert.ok(inNav || inSupports, 'backdrop-filter used outside the tab bar material')
+    assert.ok(inNav || inThumb || inSupports, 'backdrop-filter used outside the tab bar material')
   }
 })
 

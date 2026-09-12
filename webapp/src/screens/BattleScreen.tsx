@@ -28,12 +28,12 @@ function PlayerCard({
     >
       <Photo userId={player.user_id} alt={player.name} className="battle-photo">
         <div className="photo-scrim" aria-hidden="true" />
+        <div className="elo-chip">{player.elo} ELO</div>
         <div className="battle-copy">
-          <div className="elo-chip">{player.elo} ELO</div>
-          <strong>
-            {player.name}, {player.age}
-          </strong>
-          <span>{player.city || 'Город не указан'}</span>
+          <strong>{player.name}</strong>
+          <span>
+            {player.age} · {player.city || 'Город не указан'}
+          </span>
           <small>
             {player.calibrating ? `Калибровка ${player.battles}/10` : `${player.wins}W · ${player.losses}L`}
           </small>
@@ -160,7 +160,7 @@ export function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise
             onChoose={() => void vote(battle.right.user_id)}
           />
           <div className={`battle-toast${message ? ' result' : ''}`} aria-live="polite">
-            {message || 'Тапни по победителю'}
+            {message || ''}
           </div>
         </div>
       )}

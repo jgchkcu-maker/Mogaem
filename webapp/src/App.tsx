@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { ArrowClockwise, Flame, Heart, Sword, Trophy, UserCircle, WarningCircle } from '@phosphor-icons/react'
 import { api } from './api'
 import { errorText, haptic } from './lib'
@@ -16,7 +16,7 @@ function NavIcon({ tab, active }: { tab: Tab; active: boolean }) {
   const weight = active ? 'fill' : 'regular'
   const iconProps = {
     className: 'nav-icon',
-    size: 24,
+    size: 26,
     weight,
     'aria-hidden': true,
   } as const
@@ -97,21 +97,30 @@ export default function App() {
     <div className="app-shell">
       <main className="content">{screen}</main>
       <nav className="bottom-nav" aria-label="Основная навигация">
-        {navItems.map((item) => (
-          <button
-            className={tab === item.id ? 'active' : ''}
-            key={item.id}
-            onClick={() => {
-              setTab(item.id)
-              haptic('select')
-            }}
-            type="button"
-            aria-current={tab === item.id ? 'page' : undefined}
-          >
-            <NavIcon tab={item.id} active={tab === item.id} />
-            <small>{item.label}</small>
-          </button>
-        ))}
+        <div className="nav-track">
+          <span
+            aria-hidden="true"
+            className="nav-thumb"
+            style={{ '--nav-index': navItems.findIndex((item) => item.id === tab) } as CSSProperties}
+          />
+          {navItems.map((item) => (
+            <button
+              className={tab === item.id ? 'active' : ''}
+              key={item.id}
+              onClick={() => {
+                setTab(item.id)
+                haptic('select')
+              }}
+              type="button"
+              aria-current={tab === item.id ? 'page' : undefined}
+            >
+              <NavIcon tab={item.id} active={tab === item.id} />
+              {/* Section name lives in the screen header; the bar is
+                  icon-only, the label stays for screen readers. */}
+              <small className="visually-hidden">{item.label}</small>
+            </button>
+          ))}
+        </div>
       </nav>
     </div>
   )
