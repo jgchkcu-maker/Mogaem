@@ -50,4 +50,8 @@ def test_runtime_waits_for_quick_tunnel_dns_and_public_health():
     assert 'for i in $(seq 1 90); do' in workflow
     assert 'curl --silent --show-error --fail --connect-timeout 5 --max-time 10 "$PUBLIC_URL/health"' in workflow
     assert 'Quick Tunnel URL did not become reachable in time' in workflow
-    assert 'kill -0 "$(cat .tunnel.pid)"' in workflow
+
+    readiness_block = workflow.split("PUBLIC_READY=0", 1)[1].split("python -m mogaem.configure_webapp", 1)[0]
+    assert 'kill -0 "$(cat .tunnel.pid)"' in readiness_block
+    assert 'kill -0 "$(cat .api.pid)"' in readiness_block
+    assert 'FastAPI process exited while waiting for the Quick Tunnel URL' in readiness_block
