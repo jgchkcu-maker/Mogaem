@@ -28,10 +28,10 @@ async def test_database_service_flow_end_to_end():
         assert candidate is not None
         assert candidate.user_id == b.id
 
-        await service.rate(a.id, b.id, "Chad")
+        await service.rate(a.id, b.id, "9")
         assert await service.next_candidate(a.id) is None
 
-        await service.rate(b.id, a.id, "Chad-lite")
+        await service.rate(b.id, a.id, "8")
         request = await service.create_chat_request(b.id, a.id)
         resolved, match = await service.resolve_chat_request(request.id, a.id, accept=True)
         assert resolved.status == "accepted"
