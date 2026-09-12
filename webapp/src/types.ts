@@ -78,6 +78,19 @@ export interface MatchItem {
   created_at: string
 }
 
+export interface TelegramInsets {
+  top?: number
+  right?: number
+  bottom?: number
+  left?: number
+}
+
+export type TelegramWebAppEvent =
+  | 'safeAreaChanged'
+  | 'contentSafeAreaChanged'
+  | 'viewportChanged'
+  | 'themeChanged'
+
 export interface TelegramWebApp {
   initData: string
   colorScheme?: 'light' | 'dark'
@@ -85,6 +98,9 @@ export interface TelegramWebApp {
   expand: () => void
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
+  safeAreaInset?: TelegramInsets
+  contentSafeAreaInset?: TelegramInsets
+  onEvent?: (event: TelegramWebAppEvent, handler: () => void) => void
   HapticFeedback?: {
     impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void

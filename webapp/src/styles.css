@@ -1,18 +1,27 @@
 :root {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
-  color: var(--tg-theme-text-color, #f6f7fb);
-  background: var(--tg-theme-bg-color, #090b10);
+  color: #f6f7fb;
+  background: #090b10;
   color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 
-  --bg: var(--tg-theme-bg-color, #090b10);
-  --text: var(--tg-theme-text-color, #f6f7fb);
-  --muted: var(--tg-theme-hint-color, #9299a8);
-  --accent: var(--tg-theme-button-color, #7c62ff);
-  --accent-text: var(--tg-theme-button-text-color, #ffffff);
-  --secondary: var(--tg-theme-secondary-bg-color, #151821);
+  /* Dark-only palette by design: never derive these from Telegram theme
+     variables, or a light client theme re-maps the Liquid Glass surfaces. */
+  --bg: #090b10;
+  --text: #f6f7fb;
+  --muted: #9299a8;
+  --accent: #7c62ff;
+  --accent-text: #ffffff;
+  --secondary: #151821;
+
+  /* Telegram reports insets in px via safeArea/contentSafeArea events; CSS
+     env() may stay 0 in the Telegram WebView, so take whichever is larger. */
+  --safe-top: max(env(safe-area-inset-top, 0px), var(--tg-safe-top, 0px), var(--tg-content-safe-top, 0px));
+  --safe-right: max(env(safe-area-inset-right, 0px), var(--tg-safe-right, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-bottom, 0px));
+  --safe-left: max(env(safe-area-inset-left, 0px), var(--tg-safe-left, 0px));
 
   --surface: color-mix(in srgb, var(--secondary) 94%, var(--bg));
   --surface-raised: color-mix(in srgb, var(--secondary) 86%, var(--text) 4%);
@@ -32,7 +41,7 @@
   --success: #54dda9;
   --radius-outer: 32px;
   --radius-card: 28px;
-  --radius-inner: 22px;
+  --radius-inner: 16px;
   --radius-control: 999px;
   --spring: cubic-bezier(.2, .8, .2, 1);
 }
@@ -55,6 +64,7 @@ html {
 body {
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   background:
     radial-gradient(72% 52% at 6% -10%, color-mix(in srgb, var(--accent) 23%, transparent), transparent 66%),
@@ -169,7 +179,8 @@ img {
 
 .app-shell {
   min-height: 100vh;
-  padding-bottom: calc(102px + env(safe-area-inset-bottom));
+  min-height: 100dvh;
+  padding-bottom: calc(102px + var(--safe-bottom, 0px));
 }
 
 .content {
@@ -180,7 +191,7 @@ img {
 }
 
 .screen {
-  padding: calc(24px + env(safe-area-inset-top)) 16px 34px;
+  padding: calc(24px + var(--safe-top, 0px)) 16px 34px;
 }
 
 .screen-header {
@@ -553,16 +564,36 @@ img {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 44px 1fr auto;
+  grid-template-columns: 34px 44px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  padding: 13px 14px;
+  padding: 12px 14px;
   border-radius: 22px;
 }
 
 .rank {
-  color: color-mix(in srgb, var(--accent) 58%, white 28%);
-  font-weight: 950;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: -.01em;
+}
+
+.rank-gold { color: #f6c945; }
+.rank-silver { color: #c8d2e4; }
+.rank-bronze { color: #d99a66; }
+
+.row-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--secondary) 92%, black);
+}
+
+.row-avatar .photo-placeholder {
+  font-size: 11px;
+  letter-spacing: .08em;
 }
 
 .leader-copy {
@@ -580,6 +611,10 @@ img {
 
 .leader-copy small {
   color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .leaderboard-row > b {
@@ -588,11 +623,12 @@ img {
 }
 
 .match-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
   align-items: center;
   min-height: 66px;
-  padding: 14px 15px;
+  padding: 11px 15px;
   border-radius: 22px;
   color: inherit;
   text-decoration: none;
@@ -604,15 +640,29 @@ img {
   border-color: color-mix(in srgb, var(--accent) 34%, var(--surface-stroke));
 }
 
-.match-row div {
+.match-row .row-avatar {
+  border-radius: 8px;
+}
+
+.match-row .match-copy {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 4px;
+}
+
+.match-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .match-row span {
   color: var(--muted);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .match-row > b {
@@ -634,7 +684,7 @@ img {
   width: 94px;
   height: 94px;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 14px;
   background: var(--secondary);
 }
 
@@ -682,7 +732,7 @@ img {
   z-index: 20;
   left: 10px;
   right: 10px;
-  bottom: calc(8px + env(safe-area-inset-bottom));
+  bottom: calc(8px + var(--safe-bottom, 0px));
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
@@ -770,7 +820,7 @@ img {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 760;
   line-height: 1;
   white-space: nowrap;

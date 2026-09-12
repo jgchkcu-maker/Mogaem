@@ -79,6 +79,15 @@ function StateCard({ children }: { children: ReactNode }) {
   return <div className="state-card content-surface">{children}</div>
 }
 
+function Avatar({ userId }: { userId: number }) {
+  const photo = usePhoto(userId)
+  return (
+    <div className="row-avatar">
+      {photo ? <img src={photo} alt="" /> : <div className="photo-placeholder">MOG</div>}
+    </div>
+  )
+}
+
 function NavIcon({ tab }: { tab: Tab }) {
   const iconProps = {
     className: 'nav-icon',
@@ -169,6 +178,7 @@ function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> 
     setLoading(true)
     setError(null)
     setMessage(null)
+    setVoting(false)
     try {
       setBattle(await api.nextBattle())
     } catch (err) {
@@ -191,11 +201,12 @@ function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> 
       setMessage(`${result.winner.name} MOG’ает · +${delta} ELO`)
       haptic('success')
       await onStatsChanged()
+      // Stay disabled until the next pair replaces this one so a fast second
+      // tap cannot re-submit the same battle.
       window.setTimeout(() => { void load() }, 650)
     } catch (err) {
       setError(errorText(err))
       haptic('error')
-    } finally {
       setVoting(false)
     }
   }
@@ -301,6 +312,7 @@ function LeaderboardScreen() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -311,7 +323,15 @@ function LeaderboardScreen() {
       .catch((err) => { if (active) setError(errorText(err)) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [gender])
+  }, [gender, reloadToken])
+
+  const rankClass = (entry: LeaderboardEntry) => {
+    if (entry.calibrating || !entry.rank) return ''
+    if (entry.rank === 1) return ' rank-gold'
+    if (entry.rank === 2) return ' rank-silver'
+    if (entry.rank === 3) return ' rank-bronze'
+    return ''
+  }
 
   return (
     <section className="screen">
@@ -322,12 +342,13 @@ function LeaderboardScreen() {
         ))}
       </div>
       {loading && <StateCard>Считаем таблицу…</StateCard>}
-      {!loading && error && <StateCard>{error}</StateCard>}
+      {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
       {!loading && !error && entries.length === 0 && <StateCard>Пока нет анкет для рейтинга.</StateCard>}
       <div className="leaderboard-list">
         {entries.map((entry, index) => (
           <div className="leaderboard-row content-surface" key={entry.user_id}>
-            <span className="rank">{entry.calibrating ? '•' : `#${entry.rank ?? index + 1}`}</span>
+            <span className={`rank${rankClass(entry)}`}>{entry.calibrating ? '•' : `#${entry.rank ?? index + 1}`}</span>
+            <Avatar userId={entry.user_id} />
             <div className="leader-copy">
               <strong>{entry.name}, {entry.age}</strong>
               <small>{entry.calibrating ? `Калибровка ${entry.battles}/10` : `${entry.wins}W · ${entry.losses}L · top ${entry.percentile ?? '—'}%`}</small>
@@ -344,26 +365,30 @@ function MatchesScreen() {
   const [matches, setMatches] = useState<MatchItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
 
   useEffect(() => {
     let active = true
+    setLoading(true)
+    setError(null)
     api.matches()
       .then((rows) => { if (active) setMatches(rows) })
       .catch((err) => { if (active) setError(errorText(err)) })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [])
+  }, [reloadToken])
 
   return (
     <section className="screen">
       <ScreenHeader eyebrow="MATCHES" title="Ваши матчи" subtitle="Здесь появляются принятые запросы. Новые запросы и уведомления пока остаются в боте." />
       {loading && <StateCard>Загружаем матчи…</StateCard>}
-      {!loading && error && <StateCard>{error}</StateCard>}
+      {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
       {!loading && !error && matches.length === 0 && <StateCard><b>Матчей пока нет</b><span>Взаимно оцените друг друга в основном MOG-фиде и отправьте запрос через бота.</span></StateCard>}
       <div className="match-list">
         {matches.map((match) => (
           <a className="match-row content-surface" href={match.contact_url} key={match.user_id}>
-            <div>
+            <Avatar userId={match.user_id} />
+            <div className="match-copy">
               <strong>{match.name}, {match.age}</strong>
               <span>{match.city || 'Город не указан'}</span>
             </div>
