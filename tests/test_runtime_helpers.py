@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import httpx
 import pytest
 
@@ -39,3 +41,13 @@ async def test_fastapi_serves_built_spa_and_keeps_api_404(tmp_path):
 
         missing_api = await client.get("/api/does-not-exist")
         assert missing_api.status_code == 404
+
+
+def test_runtime_waits_for_quick_tunnel_dns_and_public_health():
+    workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "bot.yml").read_text(encoding="utf-8")
+
+    assert 'curl --fail --retry 10 --retry-delay 2 "$PUBLIC_URL/health"' not in workflow
+    assert 'for i in $(seq 1 90); do' in workflow
+    assert 'curl --silent --show-error --fail --connect-timeout 5 --max-time 10 "$PUBLIC_URL/health"' in workflow
+    assert 'Quick Tunnel URL did not become reachable in time' in workflow
+    assert 'kill -0 "$(cat .tunnel.pid)"' in workflow
