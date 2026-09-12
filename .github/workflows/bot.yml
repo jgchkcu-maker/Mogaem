@@ -109,6 +109,11 @@ jobs:
               PUBLIC_READY=1
               break
             fi
+            if ! kill -0 "$(cat .api.pid)" 2>/dev/null; then
+              echo "FastAPI process exited while waiting for the Quick Tunnel URL"
+              cat uvicorn.log
+              exit 1
+            fi
             if ! kill -0 "$(cat .tunnel.pid)" 2>/dev/null; then
               echo "Quick Tunnel process exited before its public URL became reachable"
               cat cloudflared.log
