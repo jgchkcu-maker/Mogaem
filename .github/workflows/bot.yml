@@ -138,12 +138,5 @@ jobs:
 
           finish_services
           if [ -z "$DATABASE_URL_SECRET" ] && [ -f mogaem.db ]; then
-            python - <<'PY'
-          import sqlite3
-          connection = sqlite3.connect("mogaem.db")
-          try:
-              connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-          finally:
-              connection.close()
-          PY
+            python -c 'import sqlite3; c=sqlite3.connect("mogaem.db"); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()'
           fi
