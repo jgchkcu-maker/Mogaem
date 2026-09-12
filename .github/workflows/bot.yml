@@ -57,7 +57,8 @@ jobs:
           chmod +x cloudflared
           ./cloudflared --version
 
-      - name: Run Mini App and bot
+      - name: Start Mini App, tunnel and bot
+        id: bootstrap
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           DATABASE_URL_SECRET: ${{ secrets.DATABASE_URL }}
@@ -68,30 +69,14 @@ jobs:
             export DATABASE_URL="$DATABASE_URL_SECRET"
           fi
 
-          API_PID=""
-          TUNNEL_PID=""
-          finish_services() {
-            if [ -n "$TUNNEL_PID" ]; then
-              kill "$TUNNEL_PID" 2>/dev/null || true
-              wait "$TUNNEL_PID" 2>/dev/null || true
-              TUNNEL_PID=""
-            fi
-            if [ -n "$API_PID" ]; then
-              kill "$API_PID" 2>/dev/null || true
-              wait "$API_PID" 2>/dev/null || true
-              API_PID=""
-            fi
-          }
-          trap finish_services EXIT
-
-          python -m uvicorn mogaem.api:app --host 127.0.0.1 --port 8000 >uvicorn.log 2>&1 &
-          API_PID=$!
+          nohup python -m uvicorn mogaem.api:app --host 127.0.0.1 --port 8000 >uvicorn.log 2>&1 &
+          echo $! > .api.pid
 
           for i in $(seq 1 40); do
             if curl --silent --fail http://127.0.0.1:8000/health >/dev/null; then
               break
             fi
-            if ! kill -0 "$API_PID" 2>/dev/null; then
+            if ! kill -0 "$(cat .api.pid)" 2>/dev/null; then
               cat uvicorn.log
               exit 1
             fi
@@ -99,14 +84,14 @@ jobs:
           done
           curl --fail http://127.0.0.1:8000/health
 
-          ./cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate >cloudflared.log 2>&1 &
-          TUNNEL_PID=$!
+          nohup ./cloudflared tunnel --url http://127.0.0.1:8000 --no-autoupdate >cloudflared.log 2>&1 &
+          echo $! > .tunnel.pid
 
           PUBLIC_URL=""
           for i in $(seq 1 60); do
             PUBLIC_URL=$(grep -Eo 'https://[-a-z0-9]+\.trycloudflare\.com' cloudflared.log | head -n 1 || true)
             if [ -n "$PUBLIC_URL" ]; then break; fi
-            if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+            if ! kill -0 "$(cat .tunnel.pid)" 2>/dev/null; then
               cat cloudflared.log
               exit 1
             fi
@@ -117,26 +102,63 @@ jobs:
             exit 1
           fi
 
-          echo "Mini App URL: $PUBLIC_URL"
           curl --fail --retry 10 --retry-delay 2 "$PUBLIC_URL/health"
           python -m mogaem.configure_webapp "$PUBLIC_URL"
+          printf '%s\n' "$PUBLIC_URL" > miniapp-url.txt
+          echo "public_url=$PUBLIC_URL" >> "$GITHUB_OUTPUT"
           {
             echo "### Mogaem Mini App"
             echo ""
             echo "$PUBLIC_URL"
           } >> "$GITHUB_STEP_SUMMARY"
 
-          set +e
-          timeout --signal=INT 52m python -m mogaem.bot
-          code=$?
-          set -e
-          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ] && [ "$code" -ne 130 ]; then
-            echo "Bot exited with code $code"
-            cat uvicorn.log
-            exit "$code"
+          nohup python -m mogaem.bot >bot.log 2>&1 &
+          echo $! > .bot.pid
+          sleep 5
+          if ! kill -0 "$(cat .bot.pid)" 2>/dev/null; then
+            cat bot.log
+            exit 1
           fi
+          grep -E 'Start polling|Run polling for bot' bot.log || true
 
-          finish_services
+      - name: Publish current Mini App URL
+        uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-url
+          path: miniapp-url.txt
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Keep test runtime alive
+        env:
+          PUBLIC_URL: ${{ steps.bootstrap.outputs.public_url }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 48); do
+            kill -0 "$(cat .api.pid)"
+            kill -0 "$(cat .tunnel.pid)"
+            kill -0 "$(cat .bot.pid)"
+            curl --silent --fail "$PUBLIC_URL/health" >/dev/null
+            sleep 60
+          done
+
+      - name: Stop services and checkpoint SQLite
+        if: always()
+        env:
+          DATABASE_URL_SECRET: ${{ secrets.DATABASE_URL }}
+        run: |
+          for pidfile in .bot.pid .tunnel.pid .api.pid; do
+            if [ -f "$pidfile" ]; then
+              kill "$(cat "$pidfile")" 2>/dev/null || true
+              sleep 1
+            fi
+          done
           if [ -z "$DATABASE_URL_SECRET" ] && [ -f mogaem.db ]; then
             python -c 'import sqlite3; c=sqlite3.connect("mogaem.db"); c.execute("PRAGMA wal_checkpoint(TRUNCATE)"); c.close()'
           fi
+          echo "--- bot.log ---"
+          tail -n 40 bot.log 2>/dev/null || true
+          echo "--- uvicorn.log ---"
+          tail -n 40 uvicorn.log 2>/dev/null || true
+          echo "--- cloudflared.log ---"
+          tail -n 40 cloudflared.log 2>/dev/null || true
