@@ -3,6 +3,13 @@ from __future__ import annotations
 from typing import MutableMapping, MutableSequence
 
 RATING_LABELS = ("Chad", "Chad-lite", "Normie", "Sub5", "Sub3")
+RATING_SCORES = {
+    "Chad": 10.0,
+    "Chad-lite": 8.0,
+    "Normie": 6.0,
+    "Sub5": 4.0,
+    "Sub3": 2.0,
+}
 GENDERS = {"male", "female"}
 SEARCH_GENDERS = {"male", "female", "any"}
 
