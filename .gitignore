@@ -10,3 +10,6 @@ webapp/node_modules/
 webapp/dist/
 cloudflared
 *.log
+*.tsbuildinfo
+webapp/vite.config.js
+webapp/vite.config.d.ts

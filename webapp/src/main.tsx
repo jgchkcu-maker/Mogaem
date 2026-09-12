@@ -3,16 +3,24 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './styles.css'
 
-// Mogaem is deliberately dark-only: the Liquid Glass palette in styles.css is
-// tuned for dark surfaces, so Telegram light themes must not re-map it.
-const BRAND_BG = '#090b10'
+// Appearance follows the Telegram client color scheme (official WebApp
+// recommendation); outside Telegram it falls back to the OS setting. The
+// palette itself is Mogaem's Apple-HIG system: raw themeParams are not
+// consumed, because user-made Telegram themes would break the design.
+function systemScheme(): 'light' | 'dark' {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
 const tg = window.Telegram?.WebApp
 
-function applyChromeColor() {
+function applyScheme() {
+  const scheme = tg?.colorScheme === 'light' || tg?.colorScheme === 'dark' ? tg.colorScheme : systemScheme()
+  document.documentElement.dataset.scheme = scheme
+  // Chrome color matches systemBackground of the active appearance.
+  const chrome = scheme === 'dark' ? '#000000' : '#f2f2f7'
   try {
-    tg?.setHeaderColor?.(BRAND_BG)
-    tg?.setBackgroundColor?.(BRAND_BG)
+    tg?.setHeaderColor?.(chrome)
+    tg?.setBackgroundColor?.(chrome)
   } catch {
     // Older Telegram clients can ignore explicit color setters.
   }
@@ -32,15 +40,16 @@ function syncSafeAreaInsets() {
 
 tg?.ready()
 tg?.expand()
-applyChromeColor()
+applyScheme()
 syncSafeAreaInsets()
 
-// Insets arrive only after the viewport settles and change on rotation or
-// Telegram UI updates, so listen instead of reading them once.
+// Insets and appearance arrive only after the viewport settles and change on
+// rotation or Telegram UI updates, so listen instead of reading them once.
 for (const event of ['safeAreaChanged', 'contentSafeAreaChanged', 'viewportChanged'] as const) {
   tg?.onEvent?.(event, syncSafeAreaInsets)
 }
-tg?.onEvent?.('themeChanged', applyChromeColor)
+tg?.onEvent?.('themeChanged', applyScheme)
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyScheme)
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Mini App root element is missing')

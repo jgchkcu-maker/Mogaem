@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test:ui": "node --test scripts/liquid-glass.test.mjs",
+    "test:ui": "node --test scripts/design-system.test.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
