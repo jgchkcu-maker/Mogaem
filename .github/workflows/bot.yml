@@ -2,6 +2,10 @@ name: Run Mogaem bot
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bot.yml"
   schedule:
     - cron: "7 */5 * * *"
 
