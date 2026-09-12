@@ -25,6 +25,9 @@ jobs:
       - name: Install Mini App
         working-directory: webapp
         run: npm install
+      - name: Liquid Glass UI contract
+        working-directory: webapp
+        run: npm run test:ui
       - name: Build Mini App
         working-directory: webapp
         run: npm run build
