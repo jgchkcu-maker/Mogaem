@@ -32,20 +32,25 @@ python -m mogaem.bot
 DATABASE_URL=sqlite+aiosqlite:///mogaem.db
 ```
 
-Для реальных пользователей используй PostgreSQL, потому что файловая SQLite-база на GitHub Actions пропадёт при смене runner-а.
+Для реальных пользователей используй PostgreSQL. Временный GitHub Actions runner умеет работать и без него через SQLite + Actions cache, но cache не является полноценной гарантией сохранности пользовательской базы.
 
 ## GitHub Secrets
 
-В репозитории открой **Settings → Secrets and variables → Actions → New repository secret** и добавь:
+В репозитории открой **Settings → Secrets and variables → Actions → New repository secret**.
 
-- `BOT_TOKEN` — токен от BotFather;
-- `DATABASE_URL` — строка подключения PostgreSQL, например от Neon/Supabase/Railway Postgres.
+Обязательно добавь:
+
+- `BOT_TOKEN` — токен от BotFather.
+
+Опционально добавь:
+
+- `DATABASE_URL` — строка подключения PostgreSQL, например от Neon/Supabase/Railway Postgres. Если её нет, временный GitHub Actions runner использует SQLite и переносит `mogaem.db` между запусками через Actions cache. Для реальных пользователей PostgreSQL надёжнее.
 
 Токен в код, README, issue или commit не добавляй.
 
 ## Временный запуск через GitHub Actions
 
-Workflow `Run Mogaem bot` можно запустить вручную через **Actions → Run Mogaem bot → Run workflow**. Также он перезапускается по расписанию. Это временная схема: GitHub-hosted Actions предназначены прежде всего для CI/CD и ограничивают длительность job, поэтому для постоянной работы потом лучше перенести тот же код на VPS/Railway/Render-подобный сервис.
+Workflow `Run Mogaem bot` можно запустить вручную через **Actions → Run Mogaem bot → Run workflow**. Также он перезапускается по расписанию. Один запуск работает чуть меньше пяти часов, затем база SQLite сохраняется в Actions cache, и следующий запуск восстанавливает её. Это временная схема: GitHub-hosted Actions предназначены прежде всего для CI/CD, поэтому для постоянной работы потом лучше перенести тот же код на VPS/Railway/Render-подобный сервис и PostgreSQL.
 
 ## Тесты
 
