@@ -85,5 +85,22 @@ def my_profile_keyboard() -> InlineKeyboardMarkup:
     kb.button(text="🔥 Смотреть анкеты", callback_data="browse")
     kb.button(text="⚙️ Пол поиска", callback_data="search:menu")
     kb.button(text="✏️ Пересоздать анкету", callback_data="profile:recreate")
+    kb.button(text="😴 Отключить анкету", callback_data="profile:disable")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def inactive_profile_keyboard() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="❤️ Включить анкету", callback_data="profile:enable")
+    kb.button(text="✏️ Создать заново", callback_data="profile:recreate")
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def profile_disable_confirm_keyboard() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Да, отключить", callback_data="profile:disable:confirm")
+    kb.button(text="↩️ Нет", callback_data="profile:disable:cancel")
     kb.adjust(1)
     return kb.as_markup()
