@@ -39,3 +39,25 @@ async def test_database_service_flow_end_to_end():
         assert {match.user_low_id, match.user_high_id} == {a.id, b.id}
 
     await engine.dispose()
+
+
+def test_onboarding_uses_reply_keyboards_with_expected_rows():
+    pytest.importorskip("aiogram")
+
+    from mogaem.keyboards import reply_keyboard
+    from mogaem.onboarding import CONFIRM_ROWS, GENDER_ROWS, SEARCH_GENDER_ROWS, START_ROWS
+
+    for rows in (START_ROWS, GENDER_ROWS, SEARCH_GENDER_ROWS, CONFIRM_ROWS):
+        markup = reply_keyboard(rows)
+        assert [[button.text for button in row] for row in markup.keyboard] == [list(row) for row in rows]
+        assert markup.resize_keyboard is True
+        assert markup.is_persistent is True
+
+
+def test_profile_fsm_matches_registration_order():
+    pytest.importorskip("aiogram")
+
+    from mogaem.states import ProfileForm
+
+    names = [state.state.rsplit(":", 1)[-1] for state in ProfileForm.__all_states__]
+    assert names == ["ready", "age", "gender", "search_gender", "city", "name", "bio", "photos", "preview"]
