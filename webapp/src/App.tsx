@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Flame, Heart, Sword, Trophy, UserCircle, WarningCircle } from '@phosphor-icons/react'
+import { ArrowClockwise, Flame, Heart, Sword, Trophy, UserCircle, WarningCircle } from '@phosphor-icons/react'
 import { api } from './api'
 import { errorText, haptic } from './lib'
 import type { MeResponse } from './types'
@@ -84,7 +84,10 @@ export default function App() {
         <b>Mini App не открылся</b>
         <span>{error}</span>
         <button onClick={() => window.location.reload()} type="button">
-          Попробовать снова
+          <span>Попробовать снова</span>
+          <span className="btn-orb" aria-hidden="true">
+            <ArrowClockwise size={13} weight="bold" />
+          </span>
         </button>
       </main>
     )

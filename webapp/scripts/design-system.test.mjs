@@ -104,6 +104,11 @@ test('the UI has a reduced-motion fallback and visible focus', () => {
   assert.match(styles, /:focus-visible/)
 })
 
+test('boot screen carries the cropped brand wordmark as texture', () => {
+  assert.match(styles, /content: "MOGAEM"/)
+  assert.match(styles, /opacity: 0\.05/)
+})
+
 test('rating is a discrete slider with live tier feedback, not a button wall', () => {
   assert.match(rate, /type="range"/)
   assert.match(rate, /min=\{1\}/)
@@ -118,6 +123,22 @@ test('rating is a discrete slider with live tier feedback, not a button wall', (
   assert.doesNotMatch(rate, /score-button/)
   const slider = styles.match(/\.score-slider \{[\s\S]*?\}/)?.[0] ?? ''
   assert.match(slider, /appearance: none/)
+  // Primary pill CTAs carry a circular icon orb.
+  assert.match(rate, /btn-orb/)
+  assert.match(rate, /ArrowRight/)
+  assert.match(styles, /\.btn-orb/)
+})
+
+test('two-tone headlines carry the identity', () => {
+  assert.match(battle, /tone-accent/)
+  assert.match(rate, /tone-dim/)
+  assert.match(leaderboard, /tone-accent/)
+  assert.match(profile, /tone-accent/)
+  assert.match(styles, /\.tone-accent/)
+  assert.match(styles, /\.tone-dim/)
+  // Subtitles emphasize product terms.
+  assert.match(rate, /<b>MOG Score<\/b>/)
+  assert.match(leaderboard, /<b>Battle Elo<\/b>/)
 })
 
 test('battle verdict is announced and accent-marked', () => {
@@ -133,9 +154,9 @@ test('bottom navigation uses a vector icon library, not emoji glyphs', () => {
   assert.doesNotMatch(app, /icon: '[⚔🔥🏆💘👤️]'/u)
 })
 
-test('matches disclose navigation with a chevron', () => {
-  assert.match(matches, /row-chevron/)
-  assert.match(matches, /CaretRight/)
+test('matches disclose navigation with a circular arrow chip', () => {
+  assert.match(matches, /row-orb/)
+  assert.match(matches, /ArrowUpRight/)
 })
 
 test('leaderboard highlights the podium with semantic metals only', () => {

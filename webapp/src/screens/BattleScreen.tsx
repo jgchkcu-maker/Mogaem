@@ -103,8 +103,16 @@ export function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise
   return (
     <section className="screen">
       <ScreenHeader
-        title="Кто MOG’ает?"
-        subtitle="Выбери сильнейшую внешку. Elo пересчитается сразу."
+        title={
+          <>
+            Кто <span className="tone-accent">MOG’ает?</span>
+          </>
+        }
+        subtitle={
+          <>
+            Выбери сильнейшую внешку. <b>Elo</b> пересчитается сразу.
+          </>
+        }
       />
       {loading && (
         <div className="battle-grid" aria-busy="true">

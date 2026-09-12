@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CaretRight, Heart, Warning } from '@phosphor-icons/react'
+import { ArrowUpRight, Heart, Warning } from '@phosphor-icons/react'
 import { api } from '../api'
 import type { MatchItem } from '../types'
 import { errorText } from '../lib'
@@ -35,7 +35,11 @@ export function MatchesScreen() {
   return (
     <section className="screen">
       <ScreenHeader
-        title="Ваши матчи"
+        title={
+          <>
+            Ваши <span className="tone-dim">матчи</span>
+          </>
+        }
         subtitle="Здесь появляются принятые запросы. Новые запросы и уведомления пока остаются в боте."
       />
       {loading && (
@@ -79,7 +83,9 @@ export function MatchesScreen() {
                 </strong>
                 <span>{match.city || 'Город не указан'}</span>
               </div>
-              <CaretRight size={16} weight="bold" className="row-chevron" aria-hidden={true} />
+              <span className="row-orb" aria-hidden="true">
+                <ArrowUpRight size={14} weight="bold" />
+              </span>
             </a>
           ))}
         </div>

@@ -9,8 +9,16 @@ export function ProfileScreen({ me }: { me: MeResponse }) {
   return (
     <section className="screen">
       <ScreenHeader
-        title="Твоя MOG-карточка"
-        subtitle="Два независимых рейтинга: средняя оценка и сравнительный Battle Elo."
+        title={
+          <>
+            Твоя <span className="tone-accent">MOG-карточка</span>
+          </>
+        }
+        subtitle={
+          <>
+            Два независимых рейтинга: средняя оценка и сравнительный <b>Battle Elo</b>.
+          </>
+        }
       />
       <div className="profile-hero">
         <Photo userId={me.profile.user_id} alt={me.profile.name} className="profile-avatar" />

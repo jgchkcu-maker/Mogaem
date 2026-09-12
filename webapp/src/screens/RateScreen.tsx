@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
-import { Checks, Warning } from '@phosphor-icons/react'
+import { ArrowRight, Checks, Warning } from '@phosphor-icons/react'
 import { api } from '../api'
 import type { RatingCandidateResponse } from '../types'
 import { errorText, haptic, plural } from '../lib'
@@ -67,8 +67,16 @@ export function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<v
   return (
     <section className="screen">
       <ScreenHeader
-        title="Оцени внешность"
-        subtitle="Оценка 1-10 идёт в средний MOG Score и не смешивается с Battle Elo."
+        title={
+          <>
+            Оцени <span className="tone-dim">внешность</span>
+          </>
+        }
+        subtitle={
+          <>
+            Оценка 1-10 идёт в средний <b>MOG Score</b> и не смешивается с <b>Battle Elo</b>.
+          </>
+        }
       />
       {loading && (
         <div aria-busy="true">
@@ -141,7 +149,10 @@ export function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<v
               }}
             />
             <button className="rate-submit" disabled={sending} onClick={() => void rate()} type="button">
-              {sending ? 'Отправляем…' : `Оценить на ${score}`}
+              <span>{sending ? 'Отправляем…' : `Оценить на ${score}`}</span>
+              <span className="btn-orb" aria-hidden="true">
+                <ArrowRight size={13} weight="bold" />
+              </span>
             </button>
           </div>
         </>

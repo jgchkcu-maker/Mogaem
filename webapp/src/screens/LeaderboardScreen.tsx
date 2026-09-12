@@ -41,8 +41,16 @@ export function LeaderboardScreen() {
   return (
     <section className="screen">
       <ScreenHeader
-        title="Рейтинг MOG"
-        subtitle="Battle Elo показывает сравнительную силу, а не среднюю оценку 1-10."
+        title={
+          <>
+            Рейтинг <span className="tone-accent">MOG</span>
+          </>
+        }
+        subtitle={
+          <>
+            <b>Battle Elo</b> показывает сравнительную силу, а не среднюю оценку 1-10.
+          </>
+        }
       />
       <div className="segmented" role="group" aria-label="Фильтр рейтинга">
         {(

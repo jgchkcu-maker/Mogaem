@@ -1,7 +1,8 @@
+import { ArrowClockwise } from '@phosphor-icons/react'
 import type { Icon } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 
-export function ScreenHeader({ title, subtitle }: { title: string; subtitle: string }) {
+export function ScreenHeader({ title, subtitle }: { title: ReactNode; subtitle: ReactNode }) {
   return (
     <header className="screen-header">
       <h1>{title}</h1>
@@ -32,7 +33,10 @@ export function StateBlock({
       {body && <span>{body}</span>}
       {action && onAction && (
         <button onClick={onAction} type="button">
-          {action}
+          <span>{action}</span>
+          <span className="btn-orb" aria-hidden="true">
+            <ArrowClockwise size={13} weight="bold" />
+          </span>
         </button>
       )}
     </div>
