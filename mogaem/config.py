@@ -32,6 +32,7 @@ def normalize_database_url(url: str) -> str:
 class Settings(BaseSettings):
     bot_token: str
     database_url: str = "sqlite+aiosqlite:///mogaem.db"
+    webapp_auth_max_age_seconds: int = 86400
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
