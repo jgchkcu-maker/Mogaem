@@ -5,8 +5,19 @@ from collections.abc import Sequence
 from aiogram.types import InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-RATING_CODES = {"c": "Chad", "cl": "Chad-lite", "n": "Normie", "s5": "Sub5", "s3": "Sub3"}
-RATING_BUTTONS = [("🗿 Чад", "c"), ("🔥 Чад лайт", "cl"), ("🙂 Норми", "n"), ("🥀 Саб5", "s5"), ("💀 Саб3", "s3")]
+RATING_CODES = {str(value): str(value) for value in range(10, 0, -1)}
+RATING_BUTTONS = [
+    ("10 Гигачад", "10"),
+    ("9 Чад", "9"),
+    ("8 Чадлайт", "8"),
+    ("7 HTN", "7"),
+    ("6 MTN", "6"),
+    ("5 LTN", "5"),
+    ("4 Сабнорми", "4"),
+    ("3 Инцел-тир", "3"),
+    ("2 Труцел", "2"),
+    ("1 Блэкпилл", "1"),
+]
 
 
 def reply_keyboard(rows: Sequence[Sequence[str]]) -> ReplyKeyboardMarkup:
@@ -47,7 +58,8 @@ def rating_keyboard(target_user_id: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for text, code in RATING_BUTTONS:
         kb.button(text=text, callback_data=f"rate:{target_user_id}:{code}")
-    kb.adjust(2, 2, 1)
+    kb.button(text="ℹ️ Что значит шкала?", callback_data="rating:scale")
+    kb.adjust(2, 2, 2, 2, 2, 1)
     return kb.as_markup()
 
 
