@@ -1,0 +1,49 @@
+name: Run Mogaem bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7 */5 * * *"
+
+concurrency:
+  group: mogaem-bot
+  cancel-in-progress: false
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore temporary SQLite database
+        uses: actions/cache@v4
+        with:
+          path: mogaem.db
+          key: mogaem-db-${{ github.run_id }}
+          restore-keys: |
+            mogaem-db-
+      - name: Install
+        run: pip install .
+      - name: Validate bot token
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: test -n "$BOT_TOKEN" || (echo "BOT_TOKEN secret is missing" && exit 1)
+      - name: Run bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DATABASE_URL_SECRET: ${{ secrets.DATABASE_URL }}
+          PYTHONUNBUFFERED: "1"
+        run: |
+          if [ -n "$DATABASE_URL_SECRET" ]; then
+            export DATABASE_URL="$DATABASE_URL_SECRET"
+          fi
+          set +e
+          timeout --signal=INT 294m python -m mogaem.bot
+          code=$?
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then
+            exit "$code"
+          fi
+          exit 0

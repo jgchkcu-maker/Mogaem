@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mogaem"
+version = "0.1.0"
+description = "Telegram MOG dating bot"
+requires-python = ">=3.12"
+dependencies = [
+  "aiogram>=3.26,<4",
+  "SQLAlchemy>=2.0,<3",
+  "aiosqlite>=0.20,<1",
+  "asyncpg>=0.29,<1",
+  "pydantic-settings>=2.4,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "pytest-asyncio>=0.24,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["mogaem*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = ["."]
