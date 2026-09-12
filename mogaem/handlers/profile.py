@@ -6,7 +6,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InputMediaPhoto, Message, ReplyKeyboardRemove
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from ..keyboards import main_menu, my_profile_keyboard, reply_keyboard, search_gender_keyboard
+from ..keyboards import (
+    inactive_profile_keyboard,
+    main_menu,
+    my_profile_keyboard,
+    profile_disable_confirm_keyboard,
+    reply_keyboard,
+    search_gender_keyboard,
+)
 from ..onboarding import (
     BIO_PROMPT,
     CITY_PROMPT,
@@ -55,10 +62,24 @@ async def start(message: Message, state: FSMContext, session_factory: async_sess
     async with session_factory() as session:
         service = MogaemService(session)
         user = await service.ensure_user(message.from_user.id, message.from_user.username)
-        if await service.profile_complete(user.id):
+        profile_state = await service.profile_state(user.id)
+        if profile_state == "active" and await service.profile_complete(user.id):
             await state.clear()
             await message.answer("С возвращением 👋", reply_markup=ReplyKeyboardRemove())
             await message.answer("Выбирай, что делаем 👇", reply_markup=main_menu())
+            return
+        if profile_state == "inactive":
+            view = await service.profile_view(user.id)
+            await state.clear()
+            await message.answer("Твоя анкета сейчас отключена 😴", reply_markup=ReplyKeyboardRemove())
+            await message.answer("Она сохранена и не показывается другим. Можно включить её обратно одним нажатием.")
+            await send_profile_card(
+                message.bot,
+                message.from_user.id,
+                view,
+                reply_markup=inactive_profile_keyboard(),
+                prefix="<b>Сохранённая анкета</b>\n\n",
+            )
             return
     await begin_profile(message, state)
 
@@ -68,6 +89,65 @@ async def recreate_profile(callback: CallbackQuery, state: FSMContext) -> None:
     await callback.answer()
     if callback.message:
         await begin_profile(callback.message, state)
+
+
+@router.callback_query(F.data == "profile:disable")
+async def disable_profile_prompt(callback: CallbackQuery) -> None:
+    await callback.answer()
+    if callback.message:
+        await callback.message.answer(
+            "Отключить анкету?\n\nОна перестанет показываться другим, но фото, рейтинг и история сохранятся.",
+            reply_markup=profile_disable_confirm_keyboard(),
+        )
+
+
+@router.callback_query(F.data == "profile:disable:cancel")
+async def disable_profile_cancel(callback: CallbackQuery) -> None:
+    await callback.answer("Анкета остаётся включённой")
+    if callback.message:
+        await callback.message.edit_text("Анкета остаётся включённой ✅", reply_markup=my_profile_keyboard())
+
+
+@router.callback_query(F.data == "profile:disable:confirm")
+async def disable_profile_confirm(callback: CallbackQuery, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async with session_factory() as session:
+        service = MogaemService(session)
+        user = await service.user_by_telegram(callback.from_user.id)
+        if user is None or await service.profile_state(user.id) == "missing":
+            await callback.answer("Анкета не найдена", show_alert=True)
+            return
+        await service.set_profile_active(user.id, False)
+    await callback.answer("Анкета отключена")
+    if callback.message:
+        await callback.message.edit_text(
+            "Анкета отключена 😴\n\nОна больше не участвует в выдаче. Данные, фото и рейтинг сохранены.",
+            reply_markup=inactive_profile_keyboard(),
+        )
+
+
+@router.callback_query(F.data == "profile:enable")
+async def enable_profile(callback: CallbackQuery, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    async with session_factory() as session:
+        service = MogaemService(session)
+        user = await service.user_by_telegram(callback.from_user.id)
+        if user is None:
+            await callback.answer("Сначала создай анкету через /start", show_alert=True)
+            return
+        profile_state = await service.profile_state(user.id)
+        if profile_state == "missing":
+            await callback.answer("Сохранённой анкеты нет", show_alert=True)
+            return
+        if profile_state == "active":
+            await callback.answer("Анкета уже включена")
+            return
+        await service.set_profile_active(user.id, True)
+    await callback.answer("Анкета снова включена ❤️")
+    if callback.message:
+        try:
+            await callback.message.edit_reply_markup(reply_markup=my_profile_keyboard())
+        except Exception:
+            pass
+        await callback.message.answer("Анкета снова участвует в выдаче ❤️", reply_markup=main_menu())
 
 
 @router.message(ProfileForm.ready, F.text == START_BUTTON)
@@ -256,7 +336,7 @@ async def my_profile(callback: CallbackQuery, session_factory: async_sessionmake
         service = MogaemService(session)
         user = await service.user_by_telegram(callback.from_user.id)
         if user is None or not await service.profile_complete(user.id):
-            await callback.answer("Сначала создай анкету через /start", show_alert=True)
+            await callback.answer("Сначала создай или включи анкету через /start", show_alert=True)
             return
         view = await service.profile_view(user.id)
     await callback.answer()
