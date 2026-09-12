@@ -6,3 +6,7 @@ __pycache__/
 mogaem.db
 *.sqlite
 *.sqlite3
+webapp/node_modules/
+webapp/dist/
+cloudflared
+*.log
