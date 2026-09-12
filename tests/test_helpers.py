@@ -7,6 +7,15 @@ def test_normalize_postgres_url_for_asyncpg():
     assert normalize_database_url("postgres://u:p@host/db") == "postgresql+asyncpg://u:p@host/db"
 
 
+def test_normalize_neon_ssl_query_for_asyncpg():
+    url = "postgresql://u:p@host/db?sslmode=require&channel_binding=require"
+    normalized = normalize_database_url(url)
+    assert normalized.startswith("postgresql+asyncpg://")
+    assert "ssl=require" in normalized
+    assert "sslmode=" not in normalized
+    assert "channel_binding=" not in normalized
+
+
 def test_sqlite_url_is_unchanged():
     url = "sqlite+aiosqlite:///mogaem.db"
     assert normalize_database_url(url) == url
