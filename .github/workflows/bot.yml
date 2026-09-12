@@ -103,7 +103,26 @@ jobs:
           fi
           export PUBLIC_URL
 
-          curl --fail --retry 10 --retry-delay 2 "$PUBLIC_URL/health"
+          PUBLIC_READY=0
+          for i in $(seq 1 90); do
+            if curl --silent --show-error --fail --connect-timeout 5 --max-time 10 "$PUBLIC_URL/health" >/dev/null; then
+              PUBLIC_READY=1
+              break
+            fi
+            if ! kill -0 "$(cat .tunnel.pid)" 2>/dev/null; then
+              echo "Quick Tunnel process exited before its public URL became reachable"
+              cat cloudflared.log
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$PUBLIC_READY" -ne 1 ]; then
+            echo "Quick Tunnel URL did not become reachable in time: $PUBLIC_URL"
+            cat cloudflared.log
+            exit 1
+          fi
+          echo "Quick Tunnel is reachable: $PUBLIC_URL"
+
           python -m mogaem.configure_webapp "$PUBLIC_URL"
           python - <<'PY'
           import asyncio
