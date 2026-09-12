@@ -4,10 +4,13 @@ import io
 import mimetypes
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from pathlib import Path
 from typing import Annotated, AsyncIterator
 
 from aiogram import Bot
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
@@ -62,6 +65,7 @@ def create_app(
     settings: Settings | None = None,
     session_factory: async_sessionmaker[AsyncSession] | None = None,
     actor_override: TelegramWebAppUser | None = None,
+    dist_dir: str | Path | None = None,
 ) -> FastAPI:
     managed_engine: AsyncEngine | None = None
 
@@ -274,6 +278,23 @@ def create_app(
             return Response(content=destination.getvalue(), media_type=media_type, headers={"Cache-Control": "private, max-age=300"})
         finally:
             await bot.session.close()
+
+    resolved_dist = Path(dist_dir) if dist_dir is not None else Path(__file__).resolve().parents[1] / "webapp" / "dist"
+    index_file = resolved_dist / "index.html"
+    assets_dir = resolved_dist / "assets"
+    if index_file.is_file():
+        if assets_dir.is_dir():
+            app.mount("/assets", StaticFiles(directory=assets_dir), name="miniapp-assets")
+
+        @app.get("/", include_in_schema=False)
+        async def miniapp_index() -> FileResponse:
+            return FileResponse(index_file)
+
+        @app.get("/{path:path}", include_in_schema=False)
+        async def miniapp_fallback(path: str):
+            if path.startswith("api/") or path == "health":
+                raise HTTPException(status_code=404, detail="not found")
+            return FileResponse(index_file)
 
     return app
 
