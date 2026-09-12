@@ -10,6 +10,11 @@ RATING_DISPLAY = {
     "Sub3": "Саб3",
 }
 GENDER_DISPLAY = {"male": "Мужчина", "female": "Женщина"}
+CARD_GENDER_DISPLAY = {
+    "male": "👨мужской",
+    "female": "👩женский",
+    "any": "🤷неважно",
+}
 
 
 def profile_caption(*, name: str, age: int, city: str | None, bio: str, gender: str) -> str:
@@ -19,6 +24,37 @@ def profile_caption(*, name: str, age: int, city: str | None, bio: str, gender: 
     if bio:
         lines.extend(["", html.escape(bio)])
     return "\n".join(lines)
+
+
+def profile_card_caption(
+    *,
+    name: str,
+    age: int,
+    gender: str,
+    search_gender: str,
+    city: str | None,
+    rating_average: float,
+    rating_count: int,
+    valentines_received: int = 0,
+    rated_by_gender: str = "any",
+) -> str:
+    safe_name = html.escape(name)
+    safe_city = html.escape(city) if city else "Не указан"
+    gender_text = CARD_GENDER_DISPLAY.get(gender, "🤷‍не указано")
+    search_text = CARD_GENDER_DISPLAY.get(search_gender, "🤷неважно")
+    rated_by_text = CARD_GENDER_DISPLAY.get(rated_by_gender, "🤷неважно")
+    score = round(float(rating_average), 1)
+
+    return (
+        f"☘️Имя: {safe_name}, {age} лет\n\n"
+        f"💘Подарили валентинок: {valentines_received}\n"
+        f"⭐️Ваше фото оценили на: {score:.1f}/10\n"
+        f"👥Вас оценили {rating_count} человек\n\n"
+        f"Ваш пол: {gender_text}\n"
+        f"Кого вы хотите оценивать: {search_text}\n"
+        f"Кем вы хотите быть оценены: {rated_by_text}\n\n"
+        f"🌇Город: {safe_city}"
+    )
 
 
 def rating_summary(*, other_name: str, they_gave: str, you_gave: str) -> str:
