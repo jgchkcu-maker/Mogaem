@@ -1,6 +1,6 @@
 # Mogaem MVP Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deliver a runnable Telegram MOG/dating bot implementing mandatory profiles, gender-filtered browsing, MOG ratings, reciprocal rating, chat requests, and accept/decline matches.
 
@@ -23,36 +23,42 @@
 ### Task 1: Domain model and database
 **Files:** `pyproject.toml`, `mogaem/config.py`, `mogaem/db.py`, `mogaem/models.py`, `tests/test_domain.py`
 
-- [ ] Write failing tests for profile validation, candidate filtering, unique ratings, reciprocal-rating requirement, request resolution, and idempotent matches.
-- [ ] Run `pytest -q` and confirm failures are caused by missing implementation.
-- [ ] Implement SQLAlchemy models, async DB setup, and domain service functions minimally to satisfy tests.
-- [ ] Run `pytest -q` until green.
+- [x] Write failing tests for profile validation, candidate filtering, unique ratings, reciprocal-rating requirement, request resolution, and idempotent matches.
+- [x] Run `pytest -q` and confirm failures are caused by missing implementation.
+- [x] Implement SQLAlchemy models, async DB setup, and domain service functions minimally to satisfy tests.
+- [x] Run `pytest -q` until green.
 
 ### Task 2: Telegram profile onboarding and browsing
 **Files:** `mogaem/states.py`, `mogaem/keyboards.py`, `mogaem/render.py`, `mogaem/handlers/profile.py`, `mogaem/handlers/browse.py`, `mogaem/bot.py`
 
-- [ ] Add handler-focused unit tests for pure parsing/render helpers first.
-- [ ] Implement `/start`, mandatory profile FSM, photo collection, optional city, main menu, browsing and rating callbacks.
-- [ ] Ensure rating a profile triggers a notification to the rated user with the rater's profile and reciprocal-rating controls.
-- [ ] Run full tests.
+- [x] Add handler-focused unit tests for pure parsing/render helpers first.
+- [x] Implement `/start`, mandatory profile FSM, photo collection, optional city, main menu, browsing and rating callbacks.
+- [x] Ensure rating a profile triggers a notification to the rated user with the rater's profile and reciprocal-rating controls.
+- [x] Run full tests.
 
 ### Task 3: Chat request lifecycle
 **Files:** `mogaem/handlers/requests.py`, `mogaem/keyboards.py`, `mogaem/render.py`
 
-- [ ] Add failing service/format tests for request creation and confirmation card content.
-- [ ] Implement `Send chat request`, recipient confirmation with both ratings, accept/decline, and contact delivery.
-- [ ] Run full tests.
+- [x] Add failing service/format tests for request creation and confirmation card content.
+- [x] Implement `Send chat request`, recipient confirmation with both ratings, accept/decline, and contact delivery.
+- [x] Run full tests.
 
 ### Task 4: Runtime, documentation, and GitHub Actions
 **Files:** `.env.example`, `.gitignore`, `README.md`, `.github/workflows/ci.yml`, `.github/workflows/bot.yml`
 
-- [ ] Add config validation tests where applicable.
-- [ ] Document local setup and required GitHub Secrets.
-- [ ] Add CI workflow and temporary long-polling workflow.
-- [ ] Run `python -m compileall mogaem` and `pytest -q`.
+- [x] Add config validation tests where applicable.
+- [x] Document local setup and required GitHub Secrets.
+- [x] Add CI workflow and temporary long-polling workflow.
+- [x] Run `python -m compileall mogaem` and `pytest -q`.
 
 ### Task 5: Integration review
-- [ ] Verify imports and syntax.
-- [ ] Verify no token/database credentials are committed.
-- [ ] Verify GitHub diff matches the spec.
-- [ ] Open a pull request from `feat/mog-mvp` to `main`.
+- [x] Verify imports and syntax.
+- [x] Verify no token/database credentials are committed.
+- [x] Verify GitHub diff matches the spec.
+- [x] Open a pull request from `feat/mog-mvp` to `main`.
+
+## Verification
+- GitHub Actions on Python 3.12 installed aiogram, SQLAlchemy, aiosqlite and asyncpg successfully.
+- `pytest -q`: 16 passed.
+- `python -m compileall -q mogaem`: passed.
+- Full integration test creates two users/profiles in SQLite, filters candidates, stores reciprocal ratings, creates a chat request and resolves an accepted match.
