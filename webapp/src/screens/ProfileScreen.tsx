@@ -20,49 +20,46 @@ export function ProfileScreen({ me }: { me: MeResponse }) {
           </>
         }
       />
-      <div className="profile-hero">
-        <Photo userId={me.profile.user_id} alt={me.profile.name} className="profile-avatar" />
-        <div>
-          <h2>
-            {me.profile.name}, {me.profile.age}
-          </h2>
-          <p>{me.profile.city || 'Город не указан'}</p>
+      <div className="profile-grid">
+        <div className="tile profile-hero">
+          <Photo userId={me.profile.user_id} alt={me.profile.name} className="profile-avatar" />
+          <div>
+            <h2>
+              {me.profile.name}, {me.profile.age}
+            </h2>
+            <p>{me.profile.city || 'Город не указан'}</p>
+          </div>
         </div>
-      </div>
-      <div className="profile-duel">
-        <div className="duel-cell">
-          <span>MOG Score</span>
+        <div className="tile duel-tile tile-accent">
+          <span className="tile-label">MOG Score</span>
           <b>
             {me.mog.average.toFixed(1)}
             <small> /10</small>
           </b>
-          <small>
+          <small className="tile-sub">
             {me.mog.count} {plural(me.mog.count, 'оценка', 'оценки', 'оценок')}
           </small>
         </div>
-        <div className="duel-divider" aria-hidden="true" />
-        <div className="duel-cell">
-          <span>Battle Elo</span>
+        <div className="tile duel-tile tile-brown">
+          <span className="tile-label">Battle Elo</span>
           <b>{me.battle.elo}</b>
-          <small>
+          <small className="tile-sub">
             {me.battle.calibrating
               ? `Калибровка ${me.battle.battles}/10`
               : `${me.battle.battles} ${plural(me.battle.battles, 'баттл', 'баттла', 'баттлов')}`}
           </small>
         </div>
-      </div>
-      <div className="battle-record">
-        <div>
+        <div className="tile stat-tile">
           <b>{me.battle.wins}</b>
-          <span>победы</span>
+          <span className="tile-sub">победы</span>
         </div>
-        <div>
+        <div className="tile stat-tile">
           <b>{me.battle.losses}</b>
-          <span>поражения</span>
+          <span className="tile-sub">поражения</span>
         </div>
-        <div className="record-winrate">
-          <b>{winrate}%</b>
-          <span>winrate</span>
+        <div className="tile stat-tile">
+          <b className="stat-accent">{winrate}%</b>
+          <span className="tile-sub">winrate</span>
         </div>
       </div>
       <p className="profile-note">

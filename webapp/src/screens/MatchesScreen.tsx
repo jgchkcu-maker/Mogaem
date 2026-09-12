@@ -75,7 +75,7 @@ export function MatchesScreen() {
       {!loading && !error && matches.length > 0 && (
         <div className="match-list">
           {matches.map((match) => (
-            <a className="match-row" href={match.contact_url} key={match.user_id}>
+            <a className="tile match-row" href={match.contact_url} key={match.user_id}>
               <Avatar userId={match.user_id} name={match.name} />
               <div className="match-copy">
                 <strong>

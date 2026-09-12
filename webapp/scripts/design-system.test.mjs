@@ -171,6 +171,24 @@ test('leaderboard highlights the podium with semantic metals only', () => {
   assert.match(styles, /--bronze:/)
 })
 
+test('screens are composed from the mixed-fill tile system', () => {
+  assert.match(styles, /\.tile \{/)
+  assert.match(styles, /\.tile-accent/)
+  assert.match(styles, /\.tile-brown/)
+  // Profile is a bento grid: hero + accent/brown rating tiles + stat tiles.
+  assert.match(profile, /profile-grid/)
+  assert.match(profile, /tile duel-tile tile-accent/)
+  assert.match(profile, /tile duel-tile tile-brown/)
+  assert.match(profile, /stat-tile/)
+  // Lists are tile stacks, not grouped cards with separators.
+  assert.match(leaderboard, /tile leaderboard-row/)
+  assert.match(matches, /tile match-row/)
+  assert.doesNotMatch(styles, /match-row:not\(:last-child\)::after/)
+  // Rate keeps the big score tile separate from the slider controls.
+  assert.match(rate, /score-tile/)
+  assert.match(rate, /rate-controls/)
+})
+
 test('safe areas combine CSS env() with synchronized Telegram insets', () => {
   assert.match(styles, /--safe-top:.*max\(env\(safe-area-inset-top/)
   assert.match(styles, /--safe-bottom:.*max\(env\(safe-area-inset-bottom/)

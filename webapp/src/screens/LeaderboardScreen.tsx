@@ -102,7 +102,7 @@ export function LeaderboardScreen() {
         <div className="leaderboard-list">
           {entries.map((entry, index) => (
             <div
-              className={`leaderboard-row${podiumClass(entry)}`}
+              className={`tile leaderboard-row${podiumClass(entry)}`}
               key={entry.user_id}
               style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
             >

@@ -350,6 +350,44 @@ img {
   border-radius: 14px;
 }
 
+/* ---------- tiles ---------- */
+
+/* Bento constructor: content units are separate rounded tiles with mixed
+   fills (surface / accent / brown), stacked with small gaps. */
+.tile {
+  background: var(--surface);
+  border-radius: 20px;
+}
+
+.tile-accent {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.tile-brown {
+  background: var(--brown);
+  color: #f5f2f0;
+}
+
+.tile-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tile-sub {
+  font-size: 13px;
+}
+
+.tile-accent .tile-label,
+.tile-accent .tile-sub {
+  color: rgba(22, 19, 22, 0.62);
+}
+
+.tile-brown .tile-label,
+.tile-brown .tile-sub {
+  color: rgba(245, 242, 240, 0.6);
+}
+
 /* ---------- photos ---------- */
 
 .photo-placeholder {
@@ -547,9 +585,8 @@ img {
 
 .rate-hero {
   position: relative;
-  flex: 1 1 auto;
-  min-height: clamp(280px, 42dvh, 560px);
-  max-height: 58dvh;
+  flex: 0 0 auto;
+  height: clamp(180px, 32dvh, 420px);
   overflow: hidden;
   background: var(--surface);
   border-radius: 20px;
@@ -600,14 +637,19 @@ img {
   font-size: 14.5px;
 }
 
-.rate-panel {
+.rate-grid {
   display: flex;
   flex-direction: column;
   gap: 10px;
   margin-top: 14px;
+}
+
+.score-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   padding: 16px;
-  background: var(--surface);
-  border-radius: 20px;
 }
 
 .score-readout {
@@ -623,17 +665,20 @@ img {
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  color: hsl(var(--tier-hue, 40) 72% 30%);
+  color: hsl(var(--tier-hue, 19) 85% 60%);
 }
 
 .score-readout .tier {
   font-size: 18px;
   font-weight: 600;
-  color: var(--label);
+  color: #f5f2f0;
 }
 
-html[data-scheme='dark'] .score-readout b {
-  color: hsl(var(--tier-hue, 40) 80% 58%);
+.rate-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 16px;
 }
 
 .score-slider {
@@ -762,12 +807,12 @@ html[data-scheme='dark'] .score-readout b {
 
 /* ---------- leaderboard ---------- */
 
+/* List as a stack of tile bars with gaps; the podium carries the accent and
+   brown fills, the rest stay neutral. */
 .leaderboard-list {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border-radius: 20px;
-  overflow: hidden;
+  gap: 8px;
 }
 
 .leaderboard-row {
@@ -776,22 +821,18 @@ html[data-scheme='dark'] .score-readout b {
   grid-template-columns: 34px 48px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  padding: 11px 16px;
+  padding: 11px 14px;
   animation: row-in 0.35s var(--ease) backwards;
 }
 
-.leaderboard-row:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  left: 122px;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--separator);
+.leaderboard-row.podium-1 {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
-.leaderboard-row[class*='podium']::after {
-  left: 130px;
+.leaderboard-row.podium-2 {
+  background: var(--brown);
+  color: #f5f2f0;
 }
 
 @keyframes row-in {
@@ -799,12 +840,6 @@ html[data-scheme='dark'] .score-readout b {
     opacity: 0;
     transform: translateY(6px);
   }
-}
-
-.leaderboard-row.podium-1,
-.leaderboard-row.podium-2,
-.leaderboard-row.podium-3 {
-  background: var(--fill);
 }
 
 .rank {
@@ -815,7 +850,7 @@ html[data-scheme='dark'] .score-readout b {
 }
 
 .podium-1 .rank {
-  color: var(--accent-text);
+  color: var(--accent-ink);
   font-family: var(--font-display);
   font-size: 14px;
 }
@@ -834,6 +869,14 @@ html[data-scheme='dark'] .score-readout b {
   width: 56px;
   height: 56px;
   border-radius: 14px;
+}
+
+.podium-1 .leader-copy small {
+  color: rgba(22, 19, 22, 0.62);
+}
+
+.podium-2 .leader-copy small {
+  color: rgba(245, 242, 240, 0.62);
 }
 
 .row-avatar .photo-placeholder {
@@ -870,41 +913,28 @@ html[data-scheme='dark'] .score-readout b {
   letter-spacing: -0.2px;
 }
 
-.podium-1 .leader-elo {
-  color: var(--accent-text);
-}
-
 /* ---------- matches ---------- */
 
 .match-list {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border-radius: 20px;
-  overflow: hidden;
+  gap: 10px;
 }
 
 .match-row {
-  position: relative;
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr) auto;
   gap: 13px;
   align-items: center;
   min-height: 72px;
-  padding: 10px 16px;
+  padding: 10px 14px;
   color: inherit;
   text-decoration: none;
-  transition: background 0.15s var(--ease);
+  transition: background 0.15s var(--ease), transform 0.15s var(--ease);
 }
 
-.match-row:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  left: 81px;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--separator);
+.match-row:active {
+  transform: scale(0.985);
 }
 
 .match-row .row-avatar {
@@ -948,14 +978,21 @@ html[data-scheme='dark'] .score-readout b {
 
 /* ---------- profile ---------- */
 
+/* Bento grid: hero tile spans the full width, the two rating tiles split it
+   (accent / brown), then a row of three small stat tiles. */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
 .profile-hero {
+  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
   padding: 16px;
-  background: var(--surface);
-  border-radius: 20px;
 }
 
 .profile-avatar {
@@ -982,86 +1019,49 @@ html[data-scheme='dark'] .score-readout b {
   font-size: 15px;
 }
 
-.profile-duel {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  margin-top: 10px;
-  padding: 18px 0;
-  background: var(--surface);
-  border-radius: 20px 20px 0 0;
-}
-
-.duel-cell {
+.duel-tile {
+  grid-column: span 3;
   display: flex;
-  min-width: 0;
   flex-direction: column;
   align-items: flex-start;
   gap: 7px;
-  padding: 0 18px;
+  padding: 16px;
 }
 
-.duel-cell > span {
-  color: var(--label-2);
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.duel-cell > b {
+.duel-tile > b {
   font-family: var(--font-display);
-  font-size: 32px;
+  font-size: 30px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.5px;
   font-variant-numeric: tabular-nums;
 }
 
-.duel-cell > b small {
-  color: var(--label-2);
+.duel-tile > b small {
   font-family: var(--font-text);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.2px;
+  opacity: 0.65;
 }
 
-.duel-cell > small {
-  color: var(--label-2);
-  font-size: 13px;
-}
-
-.duel-divider {
-  background: var(--separator);
-}
-
-.battle-record {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  padding: 14px 0;
-  background: var(--surface);
-  border-top: 1px solid var(--separator);
-  border-radius: 0 0 20px 20px;
-}
-
-.battle-record > div {
+.stat-tile {
+  grid-column: span 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
-  padding: 0 18px;
+  gap: 5px;
+  padding: 14px 16px 16px;
 }
 
-.battle-record b {
-  font-size: 17px;
+.stat-tile > b {
+  font-size: 20px;
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
-.battle-record span {
-  color: var(--label-2);
-  font-size: 13px;
-}
-
-.battle-record .record-winrate b {
+.stat-tile .stat-accent {
   color: var(--accent-text);
 }
 

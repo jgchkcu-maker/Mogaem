@@ -84,10 +84,14 @@ export function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<v
           <div className="rate-hero" aria-hidden="true">
             <Skeleton className="skeleton-fill" />
           </div>
-          <div className="rate-panel" aria-hidden="true">
-            <Skeleton className="skeleton-line" />
-            <Skeleton className="skeleton-slider" />
-            <Skeleton className="skeleton-button" />
+          <div className="rate-grid" aria-hidden="true">
+            <div className="tile score-tile tile-brown">
+              <Skeleton className="skeleton-line" />
+            </div>
+            <div className="tile rate-controls">
+              <Skeleton className="skeleton-slider" />
+              <Skeleton className="skeleton-button" />
+            </div>
           </div>
           <LoadingLabel text="Ищем следующую анкету" />
         </div>
@@ -125,36 +129,41 @@ export function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<v
               </div>
             </Photo>
           </div>
-          <div className="rate-panel">
-            <div className="score-readout" style={{ '--tier-hue': tierHue(score) } as CSSProperties}>
-              <b>{score}</b>
-              <span className="tier">{mogNames[score]}</span>
+          <div className="rate-grid">
+            <div className="tile score-tile tile-brown">
+              <span className="tile-label">Твоя оценка</span>
+              <div className="score-readout" style={{ '--tier-hue': tierHue(score) } as CSSProperties}>
+                <b>{score}</b>
+                <span className="tier">{mogNames[score]}</span>
+              </div>
             </div>
-            <input
-              className="score-slider"
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={score}
-              disabled={sending}
-              aria-label="Оценка внешности"
-              aria-valuetext={`${score} из 10 — ${mogNames[score]}`}
-              style={{ '--val': `${((score - 1) / 9) * 100}%` } as CSSProperties}
-              onChange={(event) => {
-                const next = Number(event.target.value)
-                if (next !== score) {
-                  setScore(next)
-                  haptic('select')
-                }
-              }}
-            />
-            <button className="rate-submit" disabled={sending} onClick={() => void rate()} type="button">
-              <span>{sending ? 'Отправляем…' : `Оценить на ${score}`}</span>
-              <span className="btn-orb" aria-hidden="true">
-                <ArrowRight size={13} weight="bold" />
-              </span>
-            </button>
+            <div className="tile rate-controls">
+              <input
+                className="score-slider"
+                type="range"
+                min={1}
+                max={10}
+                step={1}
+                value={score}
+                disabled={sending}
+                aria-label="Оценка внешности"
+                aria-valuetext={`${score} из 10 — ${mogNames[score]}`}
+                style={{ '--val': `${((score - 1) / 9) * 100}%` } as CSSProperties}
+                onChange={(event) => {
+                  const next = Number(event.target.value)
+                  if (next !== score) {
+                    setScore(next)
+                    haptic('select')
+                  }
+                }}
+              />
+              <button className="rate-submit" disabled={sending} onClick={() => void rate()} type="button">
+                <span>{sending ? 'Отправляем…' : `Оценить на ${score}`}</span>
+                <span className="btn-orb" aria-hidden="true">
+                  <ArrowRight size={13} weight="bold" />
+                </span>
+              </button>
+            </div>
           </div>
         </>
       )}
