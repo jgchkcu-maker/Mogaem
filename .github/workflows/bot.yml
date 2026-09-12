@@ -32,7 +32,7 @@ jobs:
       - name: Restore temporary SQLite database
         uses: actions/cache@v4
         with:
-          path: mogaem.db
+          path: mogaem.db*
           key: mogaem-db-${{ github.run_id }}
           restore-keys: |
             mogaem-db-
@@ -70,11 +70,19 @@ jobs:
 
           API_PID=""
           TUNNEL_PID=""
-          cleanup() {
-            if [ -n "$TUNNEL_PID" ]; then kill "$TUNNEL_PID" 2>/dev/null || true; fi
-            if [ -n "$API_PID" ]; then kill "$API_PID" 2>/dev/null || true; fi
+          finish_services() {
+            if [ -n "$TUNNEL_PID" ]; then
+              kill "$TUNNEL_PID" 2>/dev/null || true
+              wait "$TUNNEL_PID" 2>/dev/null || true
+              TUNNEL_PID=""
+            fi
+            if [ -n "$API_PID" ]; then
+              kill "$API_PID" 2>/dev/null || true
+              wait "$API_PID" 2>/dev/null || true
+              API_PID=""
+            fi
           }
-          trap cleanup EXIT
+          trap finish_services EXIT
 
           python -m uvicorn mogaem.api:app --host 127.0.0.1 --port 8000 >uvicorn.log 2>&1 &
           API_PID=$!
@@ -126,4 +134,16 @@ jobs:
             echo "Bot exited with code $code"
             cat uvicorn.log
             exit "$code"
+          fi
+
+          finish_services
+          if [ -z "$DATABASE_URL_SECRET" ] && [ -f mogaem.db ]; then
+            python - <<'PY'
+          import sqlite3
+          connection = sqlite3.connect("mogaem.db")
+          try:
+              connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+          finally:
+              connection.close()
+          PY
           fi
