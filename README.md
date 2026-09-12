@@ -1,20 +1,51 @@
 # Mogaem
 
-Telegram-бот знакомств с MOG-оценками.
+Telegram MOG/dating проект: бот + Telegram Mini App.
 
-## Что уже есть в MVP
+## Что есть
+
+### Telegram-бот
 
 - обязательная анкета перед поиском;
 - имя, возраст 18+, пол, необязательный город, описание и 1–3 фото;
 - выбор пола поиска: мужчины / женщины / не важно;
-- выдача анкет и оценки `Чад`, `Чад лайт`, `Норми`, `Саб5`, `Саб3`;
-- после оценки оценённый пользователь получает анкету того, кто его оценил, и может оценить в ответ;
-- после взаимной оценки появляется кнопка запроса на переписку;
-- второй пользователь видит обе оценки и принимает или отклоняет запрос;
-- после принятия бот открывает контакты обоим;
-- уже оценённые анкеты повторно не показываются.
+- MOG-оценка внешности по шкале 1–10 (`Гигачад` → `Блэкпилл`);
+- оценённый пользователь получает анкету автора оценки и может оценить в ответ;
+- после взаимных оценок можно отправить запрос на переписку;
+- после принятия запроса бот открывает контакты обоим;
+- анкета может быть отключена и восстановлена без потери фото/рейтинга.
 
-## Локальный запуск
+### Telegram Mini App
+
+Новая Mini App использует ту же базу и содержит пять вкладок:
+
+- `⚔️ Battle` — две анкеты одного пола, выбор кто MOG'ает, моментальный перерасчёт Elo;
+- `🔥 Оценка` — текущая одиночная MOG-оценка 1–10;
+- `🏆 Рейтинг` — leaderboard по Battle Elo с фильтром пола;
+- `💘 Матчи` — принятые знакомства и переход к Telegram-контакту;
+- `👤 Профиль` — MOG Score, Battle Elo, wins/losses и калибровка.
+
+MOG Score и Battle Elo — разные показатели. Средняя оценка 1–10 хранится в `ratings`; сравнительный рейтинг Battle хранится отдельно.
+
+## Battle Elo
+
+Начальный Elo: `1000`.
+
+K-factor:
+
+- первые 10 баттлов: `48`;
+- 10–49 баттлов: `32`;
+- 50+ баттлов: `20`.
+
+До 10 завершённых баттлов профиль находится в калибровке. Один голосующий не получает одну и ту же неупорядоченную пару дважды. Себя, отключённые анкеты и анкеты без фото Battle не показывает.
+
+## Telegram Mini App auth
+
+Frontend отправляет сырой `Telegram.WebApp.initData` в `Authorization: tma ...`. Backend проверяет Telegram HMAC-подпись и `auth_date`; client-side `initDataUnsafe` не используется как источник доверия.
+
+Фото остаются Telegram `file_id`: браузер получает их только через авторизованный backend proxy, `BOT_TOKEN` во frontend не передаётся.
+
+## Локальный backend
 
 Нужен Python 3.12+.
 
@@ -23,38 +54,76 @@ python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
 pip install -e '.[dev]'
 cp .env.example .env
+python -m uvicorn mogaem.api:app --reload
+```
+
+В другом терминале:
+
+```bash
 python -m mogaem.bot
 ```
 
-Для локального теста можно использовать:
+Для локального теста:
 
 ```env
 DATABASE_URL=sqlite+aiosqlite:///mogaem.db
 ```
 
-Для реальных пользователей используй PostgreSQL. Временный GitHub Actions runner умеет работать и без него через SQLite + Actions cache, но cache не является полноценной гарантией сохранности пользовательской базы.
+Для постоянного сервера используй PostgreSQL.
+
+## Локальный Mini App frontend
+
+Нужен Node.js 22+.
+
+```bash
+cd webapp
+npm install
+npm run dev
+```
+
+Production build:
+
+```bash
+npm run build
+```
+
+FastAPI автоматически раздаёт `webapp/dist`, если production build существует.
 
 ## GitHub Secrets
 
-В репозитории открой **Settings → Secrets and variables → Actions → New repository secret**.
+**Settings → Secrets and variables → Actions**:
 
-Обязательно добавь:
+- `BOT_TOKEN` — обязательно;
+- `DATABASE_URL` — опционально. Без него тестовый runner использует SQLite + Actions cache.
 
-- `BOT_TOKEN` — токен от BotFather.
+Никогда не добавляй токен в git/README/issues.
 
-Опционально добавь:
+## Тестовый Mini App через GitHub Actions
 
-- `DATABASE_URL` — строка подключения PostgreSQL, например от Neon/Supabase/Railway Postgres. Если её нет, временный GitHub Actions runner использует SQLite и переносит `mogaem.db` между запусками через Actions cache. Для реальных пользователей PostgreSQL надёжнее.
+Workflow **Run Mogaem test runtime** предназначен только для проверки продукта до переезда на собственный сервер.
 
-Токен в код, README, issue или commit не добавляй.
+Каждый запуск:
 
-## Временный запуск через GitHub Actions
+1. восстанавливает `mogaem.db` из best-effort Actions cache;
+2. собирает React/Vite Mini App;
+3. запускает FastAPI на localhost;
+4. создаёт HTTPS Cloudflare Quick Tunnel (`*.trycloudflare.com`);
+5. проверяет публичный `/health`;
+6. автоматически ставит этот URL в Telegram menu button `⚔️ Mogaem`;
+7. запускает aiogram polling;
+8. завершается до лимита job, чтобы cache успел сохраниться;
+9. запускается снова каждый час.
 
-Workflow `Run Mogaem bot` можно запустить вручную через **Actions → Run Mogaem bot → Run workflow**. Также он перезапускается по расписанию. Один запуск работает чуть меньше пяти часов, затем база SQLite сохраняется в Actions cache, и следующий запуск восстанавливает её. Это временная схема: GitHub-hosted Actions предназначены прежде всего для CI/CD, поэтому для постоянной работы потом лучше перенести тот же код на VPS/Railway/Render-подобный сервис и PostgreSQL.
+При push в `main` текущий тестовый runtime отменяется и запускается новый. Поэтому SQLite/cache **не является гарантированным постоянным хранилищем** — при отмене job последние изменения могут потеряться. Это допустимо только для теста.
 
-## Тесты
+Для production переносится тот же код: FastAPI + bot на VPS/Docker/systemd, `DATABASE_URL` переключается на PostgreSQL, а временный tunnel заменяется постоянным HTTPS-доменом. Battle/API/frontend переписывать для этого не нужно.
+
+## Проверки
 
 ```bash
 pytest -q
-python -m compileall mogaem
+python -m compileall -q mogaem
+cd webapp && npm install && npm run build
 ```
+
+CI выполняет все три проверки на `main` и `feat/**`.
