@@ -2,14 +2,18 @@ from __future__ import annotations
 
 from typing import MutableMapping, MutableSequence
 
-RATING_LABELS = ("Chad", "Chad-lite", "Normie", "Sub5", "Sub3")
-RATING_SCORES = {
-    "Chad": 10.0,
-    "Chad-lite": 8.0,
-    "Normie": 6.0,
-    "Sub5": 4.0,
-    "Sub3": 2.0,
-}
+RATING_LABELS = tuple(str(value) for value in range(10, 0, -1))
+RATING_SCORES = {str(value): float(value) for value in range(10, 0, -1)}
+# Keep historical rows readable after the scale upgrade. New ratings can only use 1-10.
+RATING_SCORES.update(
+    {
+        "Chad": 9.0,
+        "Chad-lite": 8.0,
+        "Normie": 6.0,
+        "Sub5": 4.0,
+        "Sub3": 3.0,
+    }
+)
 GENDERS = {"male", "female"}
 SEARCH_GENDERS = {"male", "female", "any"}
 
