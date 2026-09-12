@@ -79,6 +79,14 @@ function StateCard({ children }: { children: ReactNode }) {
   return <div className="state-card content-surface">{children}</div>
 }
 
+function LoadingLabel({ text }: { text: string }) {
+  return <span className="visually-hidden">{text}</span>
+}
+
+function Skeleton({ className }: { className: string }) {
+  return <div className={`skeleton ${className}`} aria-hidden="true" />
+}
+
 function Avatar({ userId }: { userId: number }) {
   const photo = usePhoto(userId)
   return (
@@ -214,7 +222,19 @@ function BattleScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> 
   return (
     <section className="screen">
       <ScreenHeader eyebrow="MOG BATTLE" title="Кто MOG’ает?" subtitle="Выбери сильнейшую внешку. Elo пересчитается сразу." />
-      {loading && <StateCard>Подбираем максимально близкую пару по Elo…</StateCard>}
+      {loading && (
+        <div className="battle-grid" aria-busy="true">
+          {[0, 1].map((side) => (
+            <div className="battle-card content-surface" key={side} aria-hidden="true">
+              <Skeleton className="skeleton-photo" />
+              <div className="battle-card-copy">
+                <Skeleton className="skeleton-line" />
+                <Skeleton className="skeleton-line short" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => void load()} type="button">Повторить</button></StateCard>}
       {!loading && !error && !battle && <StateCard><b>Пары закончились</b><span>Нужны ещё активные анкеты одного пола или новые сочетания.</span></StateCard>}
       {!loading && battle && (
@@ -286,7 +306,18 @@ function RateScreen({ onStatsChanged }: { onStatsChanged: () => Promise<void> })
   return (
     <section className="screen">
       <ScreenHeader eyebrow="MOG SCORE" title="Оцени внешность" subtitle="Оценка 1–10 идёт в средний MOG Score и не смешивается с Battle Elo." />
-      {loading && <StateCard>Ищем следующую анкету…</StateCard>}
+      {loading && (
+        <div aria-busy="true">
+          <div className="rating-profile content-surface" aria-hidden="true">
+            <Skeleton className="skeleton-rating-photo" />
+            <div>
+              <Skeleton className="skeleton-line" />
+              <Skeleton className="skeleton-line short" />
+            </div>
+          </div>
+          <LoadingLabel text="Ищем следующую анкету" />
+        </div>
+      )}
       {!loading && error && <StateCard><b>Ошибка</b><span>{error}</span><button onClick={() => void load()} type="button">Повторить</button></StateCard>}
       {!loading && !error && !candidate && <StateCard><b>Ты всё оценил</b><span>Новые анкеты появятся здесь автоматически.</span></StateCard>}
       {!loading && candidate && (
@@ -341,12 +372,30 @@ function LeaderboardScreen() {
           <button className={gender === value ? 'active' : ''} key={value} onClick={() => setGender(value)} type="button" aria-pressed={gender === value}>{label}</button>
         ))}
       </div>
-      {loading && <StateCard>Считаем таблицу…</StateCard>}
+      {loading && (
+        <div className="leaderboard-list" aria-busy="true">
+          <LoadingLabel text="Считаем таблицу" />
+          {Array.from({ length: 6 }, (_, row) => (
+            <div className="leaderboard-row content-surface" key={row} aria-hidden="true">
+              <Skeleton className="skeleton-rank" />
+              <Skeleton className="skeleton-row-avatar" />
+              <div className="leader-copy">
+                <Skeleton className="skeleton-line" />
+                <Skeleton className="skeleton-line short" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
       {!loading && !error && entries.length === 0 && <StateCard>Пока нет анкет для рейтинга.</StateCard>}
       <div className="leaderboard-list">
         {entries.map((entry, index) => (
-          <div className="leaderboard-row content-surface" key={entry.user_id}>
+          <div
+            className={`leaderboard-row content-surface${entry.rank === 1 ? ' top-1' : ''}`}
+            key={entry.user_id}
+            style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+          >
             <span className={`rank${rankClass(entry)}`}>{entry.calibrating ? '•' : `#${entry.rank ?? index + 1}`}</span>
             <Avatar userId={entry.user_id} />
             <div className="leader-copy">
@@ -381,7 +430,20 @@ function MatchesScreen() {
   return (
     <section className="screen">
       <ScreenHeader eyebrow="MATCHES" title="Ваши матчи" subtitle="Здесь появляются принятые запросы. Новые запросы и уведомления пока остаются в боте." />
-      {loading && <StateCard>Загружаем матчи…</StateCard>}
+      {loading && (
+        <div className="match-list" aria-busy="true">
+          <LoadingLabel text="Загружаем матчи" />
+          {Array.from({ length: 3 }, (_, row) => (
+            <div className="match-row content-surface" key={row} aria-hidden="true">
+              <Skeleton className="skeleton-row-avatar" />
+              <div className="match-copy">
+                <Skeleton className="skeleton-line" />
+                <Skeleton className="skeleton-line short" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {!loading && error && <StateCard><b>Не загрузилось</b><span>{error}</span><button onClick={() => setReloadToken((token) => token + 1)} type="button">Повторить</button></StateCard>}
       {!loading && !error && matches.length === 0 && <StateCard><b>Матчей пока нет</b><span>Взаимно оцените друг друга в основном MOG-фиде и отправьте запрос через бота.</span></StateCard>}
       <div className="match-list">
@@ -413,11 +475,23 @@ function ProfileScreen({ me }: { me: MeResponse }) {
           <p>{me.profile.city || 'Город не указан'}</p>
         </div>
       </div>
-      <div className="stats-grid">
-        <div className="content-surface"><span>MOG Score</span><b>{me.mog.average.toFixed(1)}/10</b><small>{me.mog.count} оценок</small></div>
-        <div className="content-surface"><span>Battle Elo</span><b>{me.battle.elo}</b><small>{me.battle.calibrating ? `Калибровка ${me.battle.battles}/10` : `${me.battle.battles} баттлов`}</small></div>
-        <div className="content-surface"><span>Победы</span><b>{me.battle.wins}</b><small>{winrate}% winrate</small></div>
-        <div className="content-surface"><span>Поражения</span><b>{me.battle.losses}</b><small>{me.battle.battles} всего</small></div>
+      <div className="ratings-duel content-surface">
+        <div className="duel-cell">
+          <span>MOG Score</span>
+          <b>{me.mog.average.toFixed(1)}<small> /10</small></b>
+          <small>{me.mog.count} оценок</small>
+        </div>
+        <div className="duel-divider" aria-hidden="true" />
+        <div className="duel-cell">
+          <span>Battle Elo</span>
+          <b>{me.battle.elo}</b>
+          <small>{me.battle.calibrating ? `Калибровка ${me.battle.battles}/10` : `${me.battle.battles} баттлов`}</small>
+        </div>
+      </div>
+      <div className="battle-record content-surface">
+        <div><b>{me.battle.wins}</b><span>победы</span></div>
+        <div><b>{me.battle.losses}</b><span>поражения</span></div>
+        <div className="record-winrate"><b>{winrate}%</b><span>winrate</span></div>
       </div>
       <div className="profile-note">Редактирование анкеты, включение/отключение и фото пока остаются в Telegram-боте — данные уже общие с Mini App.</div>
     </section>

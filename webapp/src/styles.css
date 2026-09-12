@@ -27,14 +27,14 @@
   --surface-raised: color-mix(in srgb, var(--secondary) 86%, var(--text) 4%);
   --surface-stroke: color-mix(in srgb, var(--text) 8%, transparent);
   --surface-stroke-strong: color-mix(in srgb, var(--text) 13%, transparent);
-  --surface-shadow: 0 18px 55px rgba(0, 0, 0, .18);
+  --surface-shadow: 0 20px 50px rgba(3, 5, 12, .5);
 
   --glass-regular-fill: color-mix(in srgb, var(--secondary) 54%, transparent);
   --glass-control-fill: color-mix(in srgb, var(--secondary) 38%, transparent);
   --glass-clear-fill: color-mix(in srgb, var(--secondary) 22%, transparent);
   --glass-stroke: color-mix(in srgb, var(--text) 18%, transparent);
   --glass-specular: rgba(255, 255, 255, .30);
-  --glass-shadow: 0 18px 52px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .13);
+  --glass-shadow: 0 18px 52px rgba(3, 5, 12, .55), inset 0 1px 0 rgba(255, 255, 255, .13);
   --glass-blur: 28px;
 
   --danger: #ff6179;
@@ -85,6 +85,7 @@ body::before {
   inset: 0;
   z-index: 0;
   background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
     linear-gradient(118deg, rgba(255, 255, 255, .025), transparent 32%),
     radial-gradient(circle at 24% 30%, rgba(255, 255, 255, .018), transparent 30%);
 }
@@ -191,7 +192,15 @@ img {
 }
 
 .screen {
-  padding: calc(24px + var(--safe-top, 0px)) 16px 34px;
+  padding: calc(24px + var(--safe-top, 0px)) 16px 40px;
+  animation: screen-in .28s var(--spring);
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 
 .screen-header {
@@ -265,11 +274,75 @@ img {
   filter: brightness(.96);
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 7%, transparent), transparent);
+  animation: skeleton-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-photo {
+  aspect-ratio: .78;
+  border-radius: 0;
+}
+
+.skeleton-rating-photo {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-inner);
+}
+
+.skeleton-row-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+}
+
+.skeleton-rank {
+  width: 26px;
+  height: 13px;
+}
+
+.skeleton-line {
+  width: 72%;
+  height: 13px;
+}
+
+.skeleton-line.short {
+  width: 42%;
+  height: 11px;
+}
+
 .battle-grid {
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
 }
 
 .battle-card {
@@ -296,6 +369,16 @@ img {
   aspect-ratio: .78;
   overflow: hidden;
   background: color-mix(in srgb, var(--secondary) 92%, black);
+}
+
+.photo-shell::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0 0 auto 0;
+  height: 76px;
+  pointer-events: none;
+  background: linear-gradient(rgba(6, 8, 14, .58), transparent);
 }
 
 .photo-shell::after,
@@ -330,6 +413,7 @@ img {
   border-radius: var(--radius-control);
   font-weight: 900;
   font-size: 10px;
+  font-variant-numeric: tabular-nums;
   letter-spacing: .025em;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .018) 48%),
@@ -391,13 +475,22 @@ img {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
-  transition: color .2s ease, background .2s ease, transform .2s var(--spring);
+  font-variant-numeric: tabular-nums;
+  transition: color .2s ease, background .2s ease;
 }
 
 .battle-result.show {
   color: color-mix(in srgb, var(--success) 72%, white 25%);
   background: color-mix(in srgb, var(--success) 12%, transparent);
-  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--success) 22%, transparent);
+  animation: result-pop .3s var(--spring);
+}
+
+@keyframes result-pop {
+  from {
+    opacity: 0;
+    transform: scale(.9);
+  }
 }
 
 .rating-profile {
@@ -518,6 +611,7 @@ img {
   text-align: center;
   color: var(--muted);
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .segmented {
@@ -559,7 +653,7 @@ img {
 .match-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .leaderboard-row {
@@ -569,6 +663,21 @@ img {
   align-items: center;
   padding: 12px 14px;
   border-radius: 22px;
+  animation: row-in .34s var(--spring) backwards;
+}
+
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.leaderboard-row.top-1 {
+  border-color: color-mix(in srgb, #f6c945 32%, var(--surface-stroke));
+  background:
+    linear-gradient(160deg, color-mix(in srgb, #f6c945 7%, transparent), transparent 55%),
+    linear-gradient(160deg, color-mix(in srgb, var(--surface-raised) 93%, transparent), var(--surface));
 }
 
 .rank {
@@ -620,6 +729,7 @@ img {
 .leaderboard-row > b {
   font-size: 17px;
   letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .match-row {
@@ -633,6 +743,7 @@ img {
   color: inherit;
   text-decoration: none;
   transition: transform .18s var(--spring), border-color .18s ease;
+  animation: row-in .34s var(--spring) backwards;
 }
 
 .match-row:active {
@@ -688,32 +799,84 @@ img {
   background: var(--secondary);
 }
 
-.stats-grid {
+.ratings-duel {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 9px;
-  margin-top: 10px;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: stretch;
+  margin-top: 12px;
+  padding: 17px 6px;
+  border-radius: var(--radius-card);
 }
 
-.stats-grid > div {
+.duel-cell {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 5px;
-  min-height: 112px;
-  padding: 15px;
-  border-radius: 22px;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 0 15px;
 }
 
-.stats-grid span,
-.stats-grid small {
+.duel-cell > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .04em;
+}
+
+.duel-cell > b {
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.duel-cell > b small {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.duel-cell > small {
   color: var(--muted);
   font-size: 11px;
 }
 
-.stats-grid b {
-  margin-top: auto;
-  font-size: 25px;
-  letter-spacing: -.045em;
+.duel-divider {
+  background: var(--surface-stroke);
+}
+
+.battle-record {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 10px;
+  padding: 13px 6px;
+  border-radius: 22px;
+}
+
+.battle-record > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0 15px;
+}
+
+.battle-record b {
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.battle-record span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.battle-record .record-winrate b {
+  color: color-mix(in srgb, var(--accent) 45%, white 40%);
 }
 
 .profile-note {
@@ -888,6 +1051,36 @@ img {
     align-items: flex-start;
     justify-content: space-between;
     gap: 6px;
+  }
+}
+
+@media (hover: hover) {
+  .battle-card:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 34%, var(--surface-stroke));
+    box-shadow: 0 16px 44px rgba(3, 5, 12, .45);
+  }
+
+  .score-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 10%, rgba(255, 255, 255, .04));
+  }
+
+  .segmented button:hover:not(.active) {
+    color: var(--text);
+  }
+
+  .match-row:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--surface-stroke));
+  }
+
+  .bottom-nav button:hover:not(.active) {
+    color: var(--text);
+  }
+
+  .state-card button:hover,
+  .boot button:hover {
+    filter: brightness(1.07);
   }
 }
 
