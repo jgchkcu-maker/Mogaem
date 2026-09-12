@@ -56,6 +56,23 @@ class MogaemService:
     async def user_by_id(self, user_id: int) -> User | None:
         return await self.session.get(User, user_id)
 
+    async def profile_state(self, user_id: int) -> str:
+        profile = await self.session.get(Profile, user_id)
+        if profile is None:
+            return "missing"
+        return "active" if profile.is_active else "inactive"
+
+    async def set_profile_active(self, user_id: int, active: bool) -> None:
+        profile = await self.session.get(Profile, user_id)
+        if profile is None:
+            raise NotFoundError("profile not found")
+        if active:
+            photo_exists = await self.session.scalar(select(exists().where(Photo.user_id == user_id)))
+            if not photo_exists:
+                raise ValueError("profile requires photo")
+        profile.is_active = active
+        await self.session.commit()
+
     async def profile_complete(self, user_id: int) -> bool:
         profile = await self.session.get(Profile, user_id)
         if profile is None or not profile.is_active:
