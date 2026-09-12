@@ -1,10 +1,20 @@
 from __future__ import annotations
 
-from aiogram.types import InlineKeyboardMarkup
+from collections.abc import Sequence
+
+from aiogram.types import InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 RATING_CODES = {"c": "Chad", "cl": "Chad-lite", "n": "Normie", "s5": "Sub5", "s3": "Sub3"}
 RATING_BUTTONS = [("🗿 Чад", "c"), ("🔥 Чад лайт", "cl"), ("🙂 Норми", "n"), ("🥀 Саб5", "s5"), ("💀 Саб3", "s3")]
+
+
+def reply_keyboard(rows: Sequence[Sequence[str]]) -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text=text) for text in row] for row in rows],
+        resize_keyboard=True,
+        is_persistent=True,
+    )
 
 
 def main_menu() -> InlineKeyboardMarkup:
@@ -30,18 +40,6 @@ def search_gender_keyboard(prefix: str = "search:set") -> InlineKeyboardMarkup:
     kb.button(text="👩 Жен", callback_data=f"{prefix}:female")
     kb.button(text="🌐 Не важно", callback_data=f"{prefix}:any")
     kb.adjust(2, 1)
-    return kb.as_markup()
-
-
-def city_skip_keyboard() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="Пропустить", callback_data="onb:city:skip")
-    return kb.as_markup()
-
-
-def photo_done_keyboard() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="✅ Готово", callback_data="onb:photos:done")
     return kb.as_markup()
 
 
