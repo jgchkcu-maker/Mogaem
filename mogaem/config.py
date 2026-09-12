@@ -1,16 +1,32 @@
 from __future__ import annotations
 
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def normalize_database_url(url: str) -> str:
-    if url.startswith("postgresql+asyncpg://") or url.startswith("sqlite+aiosqlite://"):
+    if url.startswith("sqlite+aiosqlite://"):
         return url
-    if url.startswith("postgresql://"):
-        return "postgresql+asyncpg://" + url[len("postgresql://"):]
-    if url.startswith("postgres://"):
-        return "postgresql+asyncpg://" + url[len("postgres://"):]
-    return url
+    if url.startswith("postgresql+asyncpg://"):
+        normalized = url
+    elif url.startswith("postgresql://"):
+        normalized = "postgresql+asyncpg://" + url[len("postgresql://"):]
+    elif url.startswith("postgres://"):
+        normalized = "postgresql+asyncpg://" + url[len("postgres://"):]
+    else:
+        return url
+
+    parts = urlsplit(normalized)
+    query = []
+    for key, value in parse_qsl(parts.query, keep_blank_values=True):
+        if key == "sslmode":
+            query.append(("ssl", value))
+        elif key == "channel_binding":
+            continue
+        else:
+            query.append((key, value))
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
 class Settings(BaseSettings):
